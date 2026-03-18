@@ -602,37 +602,196 @@ def modulo_asignacion():
 def modulo_dashboard():
     st.markdown('<div class="sec-title">📊 Dashboard KPIs Institucionales</div>', unsafe_allow_html=True)
 
-    st.markdown("""
-    <div style="background:white;border-radius:12px;padding:1.2rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:1rem;">
-    <p style="margin:0;color:#666;font-size:0.85rem;">Sube los archivos SITCI del período para calcular los KPIs automáticamente.
-    El sistema detecta el tipo de archivo y actualiza cada módulo de forma independiente.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    datos = st.session_state.get('datos', {})
 
-    kpis_demo = {
-        'Clearance Rate':         ('≥ 100%', '—', '—', False),
-        'Plazo Tramitación':      ('≤ 180 d', '—', '—', False),
-        'Cumplimiento Plazos':    ('≥ 90%', '—', '—', False),
-        'Reducción Inventario':   ('−5% trim.', '—', '—', False),
-        'Meta Baja / día':        ('60 res.', '—', '—', False),
-        'Meta Ejecutiva / día':   ('45 res.', '—', '—', False),
-        'Meta Fondo / día':       ('25 res.', '—', '—', False),
-        'Fallos alerta > 3m':     ('0', '—', '—', False),
-    }
+    # ── Calcular KPIs desde datos disponibles ────────────────────────────────
+    kpis = {}
 
-    cols = st.columns(4)
-    for i, (kpi, (meta, val, sem, ok)) in enumerate(kpis_demo.items()):
-        with cols[i % 4]:
-            st.markdown(f"""
-            <div class="kpi-card">
-            <div class="kpi-val" style="font-size:1.4rem">{val}</div>
-            <div class="kpi-lab">{kpi}</div>
-            <div class="kpi-meta">Meta: {meta}</div>
-            </div>
-            """, unsafe_allow_html=True)
+    if 'resoluciones' in datos:
+        df_r = datos['resoluciones'].copy()
+        func_col  = next((c for c in df_r.columns if 'funcionario' in c.lower()), None)
+        fecha_col = next((c for c in df_r.columns if 'fecha' in c.lower()), None)
+        if func_col:
+            df_r['_func'] = df_r[func_col].apply(normalize_name)
+            df_r = df_r[~df_r['_func'].isin(['Juez Figueroa', '--', 'Sin asignar', ''])]
+            if fecha_col:
+                df_r['_fecha'] = pd.to_datetime(df_r[fecha_col], dayfirst=True, errors='coerce')
+                dias = df_r.dropna(subset=['_fecha'])['_fecha'].dt.date.nunique() or 21
+            else:
+                dias = 21
+            total_res = len(df_r)
+            kpis['resoluciones'] = {'total': total_res, 'prom_dia': round(total_res / dias, 1), 'dias': dias}
 
+    if 'escritos' in datos:
+        kpis['escritos'] = {'total': len(datos['escritos'])}
+
+    if 'incidentes' in datos:
+        df_inc    = datos['incidentes']
+        estado_col = next((c for c in df_inc.columns if 'estado' in c.lower()), None)
+        if estado_col:
+            total_inc  = len(df_inc)
+            concluidos = df_inc[df_inc[estado_col].str.strip() == 'Concluido'].shape[0]
+            kpis['incidentes'] = {
+                'total': total_inc,
+                'concluidos': concluidos,
+                'tasa': round(concluidos / total_inc * 100, 1) if total_inc else 0,
+            }
+
+    if 'fallos' in datos:
+        df_fal  = datos['fallos']
+        tipo_col = next((c for c in df_fal.columns if 'tipo' in c.lower() and 'causa' in c.lower()), None)
+        fecha_pf = next((c for c in df_fal.columns if 'para fallo' in c.lower()), None)
+        if tipo_col:
+            para_fallo = df_fal[df_fal[tipo_col].str.strip() == 'Para Fallo']
+            falladas   = df_fal[df_fal[tipo_col].str.strip() == 'Falladas']
+        else:
+            para_fallo, falladas = df_fal, pd.DataFrame()
+        hoy = pd.Timestamp.today()
+        alerta_3m = alerta_6m = 0
+        if fecha_pf and fecha_pf in df_fal.columns:
+            pf = para_fallo.copy()
+            pf['_fpf'] = pd.to_datetime(pf[fecha_pf], format='%d/%m/%Y', errors='coerce')
+            meses = (hoy - pf['_fpf']).dt.days / 30
+            alerta_3m = int((meses >= 3).sum())
+            alerta_6m = int((meses >= 6).sum())
+        total_f = len(para_fallo) + len(falladas)
+        kpis['fallos'] = {
+            'para_fallo': len(para_fallo),
+            'falladas':   len(falladas),
+            'clearance':  round(len(falladas) / total_f * 100, 1) if total_f else None,
+            'alerta_3m':  alerta_3m,
+            'alerta_6m':  alerta_6m,
+        }
+
+    # Clearance Rate: resoluciones vs escritos (proxy más representativo)
+    clearance_rate = None
+    if 'resoluciones' in kpis and 'escritos' in kpis and kpis['escritos']['total'] > 0:
+        clearance_rate = round(kpis['resoluciones']['total'] / kpis['escritos']['total'] * 100, 1)
+    elif 'fallos' in kpis and kpis['fallos']['clearance'] is not None:
+        clearance_rate = kpis['fallos']['clearance']
+
+    # ── Helper: renderizar tarjeta KPI ────────────────────────────────────────
+    def kpi_card(val, label, meta_text, css='kpi-card'):
+        return (f'<div class="{css}" style="min-height:90px">'
+                f'<div class="kpi-val" style="font-size:1.4rem">{val}</div>'
+                f'<div class="kpi-lab">{label}</div>'
+                f'<div class="kpi-meta">Meta: {meta_text}</div></div>')
+
+    # ── Fila 1: KPIs principales ──────────────────────────────────────────────
+    st.markdown("#### Indicadores principales")
+    c1, c2, c3, c4 = st.columns(4)
+
+    # Clearance Rate
+    if clearance_rate is not None:
+        icon, cls = semaforo(clearance_rate, 100, 90)
+        with c1: st.markdown(kpi_card(f"{icon} {clearance_rate}%", 'Clearance Rate', '≥ 100%', f'kpi-card {cls}'), unsafe_allow_html=True)
+    else:
+        with c1: st.markdown(kpi_card('—', 'Clearance Rate', '≥ 100%'), unsafe_allow_html=True)
+
+    # Resoluciones / día
+    if 'resoluciones' in kpis:
+        prom = kpis['resoluciones']['prom_dia']
+        icon, cls = semaforo(prom, 60, 51)
+        with c2: st.markdown(kpi_card(f"{icon} {prom}", 'Resoluciones / día', '≥ 60', f'kpi-card {cls}'), unsafe_allow_html=True)
+    else:
+        with c2: st.markdown(kpi_card('—', 'Resoluciones / día', '≥ 60'), unsafe_allow_html=True)
+
+    # Resolución Incidentes
+    if 'incidentes' in kpis:
+        tasa = kpis['incidentes']['tasa']
+        icon, cls = semaforo(tasa, 65, 50)
+        with c3: st.markdown(kpi_card(f"{icon} {tasa}%", 'Resolución Incidentes', '≥ 65%', f'kpi-card {cls}'), unsafe_allow_html=True)
+    else:
+        with c3: st.markdown(kpi_card('—', 'Resolución Incidentes', '≥ 65%'), unsafe_allow_html=True)
+
+    # Fallos > 3 meses
+    if 'fallos' in kpis:
+        n = kpis['fallos']['alerta_3m']
+        icon = '🔴' if n > 0 else '🟢'
+        css  = 'kpi-card alerta' if n > 0 else 'kpi-card ok'
+        with c4: st.markdown(kpi_card(f"{icon} {n}", 'Fallos > 3 meses', '0', css), unsafe_allow_html=True)
+    else:
+        with c4: st.markdown(kpi_card('—', 'Fallos > 3 meses', '0'), unsafe_allow_html=True)
+
+    # ── Fila 2: KPIs secundarios ──────────────────────────────────────────────
+    c1, c2, c3, c4 = st.columns(4)
+
+    if 'resoluciones' in kpis:
+        with c1: st.markdown(kpi_card(f"{kpis['resoluciones']['total']:,}", 'Total Resoluciones', '—', 'kpi-card ok'), unsafe_allow_html=True)
+    else:
+        with c1: st.markdown(kpi_card('—', 'Total Resoluciones', '—'), unsafe_allow_html=True)
+
+    if 'escritos' in kpis:
+        with c2: st.markdown(kpi_card(f"{kpis['escritos']['total']:,}", 'Total Escritos', '—'), unsafe_allow_html=True)
+    else:
+        with c2: st.markdown(kpi_card('—', 'Total Escritos', '—'), unsafe_allow_html=True)
+
+    if 'fallos' in kpis:
+        with c3: st.markdown(kpi_card(str(kpis['fallos']['para_fallo']), 'Causas Para Fallo', 'Mínimo', 'kpi-card warn'), unsafe_allow_html=True)
+    else:
+        with c3: st.markdown(kpi_card('—', 'Causas Para Fallo', 'Mínimo'), unsafe_allow_html=True)
+
+    if 'fallos' in kpis:
+        n = kpis['fallos']['alerta_6m']
+        icon = '🔴' if n > 0 else '🟢'
+        css  = 'kpi-card alerta' if n > 0 else 'kpi-card ok'
+        with c4: st.markdown(kpi_card(f"{icon} {n}", 'Fallos > 6 meses', '0', css), unsafe_allow_html=True)
+    else:
+        with c4: st.markdown(kpi_card('—', 'Fallos > 6 meses', '0'), unsafe_allow_html=True)
+
+    # ── Estado de módulos ─────────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("### 📁 Historial de archivos procesados")
+    st.markdown("#### Estado de datos cargados")
+    modulos = [
+        ('📊 Resoluciones', 'resoluciones'),
+        ('📨 Escritos',     'escritos'),
+        ('⚖️ Incidentes',   'incidentes'),
+        ('📋 Fallos',       'fallos'),
+    ]
+    cols_m = st.columns(4)
+    for idx, (nombre, key) in enumerate(modulos):
+        with cols_m[idx]:
+            if key in kpis:
+                st.success(f"{nombre}  \n✅ Cargado")
+            else:
+                st.warning(f"{nombre}  \n⏳ Sin datos")
+
+    if not kpis:
+        st.info("👆 Sube archivos SITCI en **Inicio / Upload** para calcular los KPIs automáticamente.")
+
+    # ── Gráfico comparativo KPIs vs Metas ─────────────────────────────────────
+    chart_data = []
+    if clearance_rate is not None:
+        chart_data.append({'KPI': 'Clearance Rate', 'Valor': clearance_rate, 'Meta': 100})
+    if 'resoluciones' in kpis:
+        chart_data.append({'KPI': 'Resoluciones/día', 'Valor': kpis['resoluciones']['prom_dia'], 'Meta': 60})
+    if 'incidentes' in kpis:
+        chart_data.append({'KPI': 'Resolución Incidentes', 'Valor': kpis['incidentes']['tasa'], 'Meta': 65})
+
+    if chart_data:
+        st.markdown("#### Cumplimiento vs Metas")
+        chart_df = pd.DataFrame(chart_data)
+        chart_df['% Cumplimiento'] = (chart_df['Valor'] / chart_df['Meta'] * 100).round(1)
+        colors = ['#375623' if v >= 100 else '#BF8F00' if v >= 85 else '#C00000'
+                  for v in chart_df['% Cumplimiento']]
+        fig = go.Figure(go.Bar(
+            x=chart_df['KPI'],
+            y=chart_df['% Cumplimiento'],
+            marker_color=colors,
+            text=[f"{v}%" for v in chart_df['% Cumplimiento']],
+            textposition='outside',
+        ))
+        fig.add_hline(y=100, line_dash='dash', line_color='#1F3864',
+                      annotation_text='Meta 100%', annotation_position='right')
+        fig.update_layout(height=320, plot_bgcolor='white', paper_bgcolor='white',
+                          yaxis_title='% cumplimiento vs meta',
+                          margin=dict(l=10, r=10, t=20, b=20),
+                          showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+    # ── Historial ─────────────────────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("#### 📁 Historial de archivos procesados")
     if 'historial' in st.session_state and st.session_state.historial:
         hist_df = pd.DataFrame(st.session_state.historial)
         st.dataframe(hist_df, use_container_width=True)
