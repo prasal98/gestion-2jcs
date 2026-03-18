@@ -333,28 +333,57 @@ def detect_file_type(df_head: list) -> str:
 
 @st.cache_data(show_spinner=False)
 def parse_xls(file_bytes: bytes, filename: str):
-    """Lee XLS de SITCI y retorna DataFrame + tipo detectado."""
+    """Lee XLS o XLSX de SITCI y retorna DataFrame + tipo detectado."""
     try:
-        wb = xlrd.open_workbook(file_contents=file_bytes)
-        sh = wb.sheets()[0]
-        # Buscar fila de encabezado (primera fila con ≥ 3 celdas no vacías)
-        header_row = 0
-        for i in range(min(10, sh.nrows)):
-            vals = [str(sh.cell_value(i, j)).strip() for j in range(sh.ncols)]
-            if sum(1 for v in vals if v and v != '') >= 3:
-                header_row = i
-                break
-        headers = [str(sh.cell_value(header_row, j)).strip() for j in range(sh.ncols)]
-        data = []
-        for i in range(header_row + 1, sh.nrows):
-            row = [str(sh.cell_value(i, j)).strip() for j in range(sh.ncols)]
-            if any(r for r in row if r and r != ''):
-                data.append(row)
-        df = pd.DataFrame(data, columns=headers)
+        if filename.lower().endswith('.xlsx'):
+            import openpyxl
+            wb   = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
+            sh   = wb.active
+            rows = list(sh.iter_rows(values_only=True))
+            if not rows:
+                return None, 'El archivo XLSX está vacío.'
+            # Fila de encabezado: primera con ≥ 3 celdas no vacías
+            header_row = 0
+            for i, row in enumerate(rows[:10]):
+                vals = [str(v).strip() for v in row if v is not None]
+                if sum(1 for v in vals if v and v.lower() != 'none') >= 3:
+                    header_row = i
+                    break
+            headers = [str(v).strip() if v is not None else '' for v in rows[header_row]]
+            data = []
+            for row in rows[header_row + 1:]:
+                vals = [str(v).strip() if v is not None else '' for v in row]
+                if any(v for v in vals if v and v.lower() != 'none'):
+                    data.append(vals)
+        else:
+            wb = xlrd.open_workbook(file_contents=file_bytes)
+            sh = wb.sheets()[0]
+            header_row = 0
+            for i in range(min(10, sh.nrows)):
+                vals = [str(sh.cell_value(i, j)).strip() for j in range(sh.ncols)]
+                if sum(1 for v in vals if v and v != '') >= 3:
+                    header_row = i
+                    break
+            headers = [str(sh.cell_value(header_row, j)).strip() for j in range(sh.ncols)]
+            data = []
+            for i in range(header_row + 1, sh.nrows):
+                row = [str(sh.cell_value(i, j)).strip() for j in range(sh.ncols)]
+                if any(r for r in row if r and r != ''):
+                    data.append(row)
+
+        df   = pd.DataFrame(data, columns=headers)
+        df   = df.loc[:, df.columns.str.strip() != '']   # quitar columnas sin nombre
         tipo = detect_file_type(headers)
         return df, tipo
     except Exception as e:
-        return None, f'error: {e}'
+        return None, f'Error al leer el archivo: {e}'
+
+def df_a_excel(df: pd.DataFrame, sheet: str = 'Reporte') -> bytes:
+    """Convierte un DataFrame a bytes de Excel descargable."""
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+        df.to_excel(writer, index=True, sheet_name=sheet)
+    return buf.getvalue()
 
 # ─── MÓDULOS ──────────────────────────────────────────────────────────────────
 
@@ -369,8 +398,22 @@ def modulo_resoluciones(df: pd.DataFrame):
         st.error("No se encontró columna de funcionario.")
         return
 
-    df['_func'] = df[func_col].apply(normalize_name)
+    df['_func']  = df[func_col].apply(normalize_name)
     df['_fecha'] = pd.to_datetime(df[fecha_col], format='%d/%m/%Y', errors='coerce') if fecha_col else None
+
+    # Filtro de fechas
+    if fecha_col and df['_fecha'].notna().any():
+        fecha_min = df['_fecha'].dropna().dt.date.min()
+        fecha_max = df['_fecha'].dropna().dt.date.max()
+        with st.expander("📅 Filtrar por rango de fechas"):
+            col_a, col_b = st.columns(2)
+            f_ini = col_a.date_input("Desde", value=fecha_min, min_value=fecha_min, max_value=fecha_max, key='res_f_ini')
+            f_fin = col_b.date_input("Hasta", value=fecha_max, min_value=fecha_min, max_value=fecha_max, key='res_f_fin')
+        mask = df['_fecha'].isna() | ((df['_fecha'].dt.date >= f_ini) & (df['_fecha'].dt.date <= f_fin))
+        df = df[mask]
+        if df.empty:
+            st.warning("No hay datos en el rango seleccionado.")
+            return
 
     # Calcular días hábiles
     if df['_fecha'].notna().any():
@@ -419,6 +462,9 @@ def modulo_resoluciones(df: pd.DataFrame):
         st.markdown(f'<div class="kpi-card"><div class="kpi-val" style="font-size:1.2rem">{top}</div><div class="kpi-lab">Mayor Rendimiento</div></div>', unsafe_allow_html=True)
 
     st.dataframe(res, use_container_width=True, height=480)
+    st.download_button("⬇️ Exportar tabla (Excel)", data=df_a_excel(res, 'Resoluciones'),
+                       file_name=f"resoluciones_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                       mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     # Gráfico
     fig = px.bar(res.sort_values('Prom/Día'), x='Prom/Día', y='Funcionario',
@@ -476,6 +522,9 @@ def modulo_escritos(df: pd.DataFrame):
         st.markdown(f'<div class="kpi-card warn"><div class="kpi-val" style="font-size:1.1rem">{max_func}</div><div class="kpi-lab">Mayor Carga · {max_val} escritos</div></div>', unsafe_allow_html=True)
 
     st.dataframe(res, use_container_width=True, height=420)
+    st.download_button("⬇️ Exportar tabla (Excel)", data=df_a_excel(res, 'Escritos'),
+                       file_name=f"escritos_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                       mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     if comp_col:
         comp_totales = df[comp_col].value_counts().reset_index()
@@ -526,6 +575,7 @@ def modulo_incidentes(df: pd.DataFrame):
     # Tabla por tipo
     st.markdown("**Por tipo de incidente**")
     by_tipo = df.groupby(tipo_col)[estado_col].value_counts().unstack(fill_value=0).reset_index()
+
     by_tipo['Total'] = by_tipo.select_dtypes('number').sum(axis=1)
     if 'Concluido' in by_tipo.columns:
         by_tipo['% Resolución'] = (by_tipo.get('Concluido', 0) / by_tipo['Total'] * 100).round(1).astype(str) + '%'
@@ -534,6 +584,9 @@ def modulo_incidentes(df: pd.DataFrame):
         by_tipo['Pendientes'] = by_tipo[pend_col]
     by_tipo = by_tipo.sort_values('Total', ascending=False)
     st.dataframe(by_tipo, use_container_width=True, height=380)
+    st.download_button("⬇️ Exportar tabla (Excel)", data=df_a_excel(by_tipo, 'Incidentes'),
+                       file_name=f"incidentes_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                       mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     # Evolución mensual
     if fecha_col:
@@ -578,11 +631,23 @@ def modulo_fallos(df: pd.DataFrame):
 
     hoy = pd.Timestamp.today()
 
-    # Antigüedad
+    # Antigüedad + filtro de fecha
     if fecha_pf and fecha_pf in df.columns:
         para_fallo = para_fallo.copy()
         para_fallo['_fpf'] = pd.to_datetime(para_fallo[fecha_pf], format='%d/%m/%Y', errors='coerce')
         para_fallo['Meses Pendiente'] = ((hoy - para_fallo['_fpf']).dt.days / 30).round(0).astype('Int64')
+
+        fechas_val = para_fallo['_fpf'].dropna()
+        if not fechas_val.empty:
+            with st.expander("📅 Filtrar Por Fallo por rango de fecha"):
+                col_a, col_b = st.columns(2)
+                f_ini = col_a.date_input("Desde", value=fechas_val.dt.date.min(),
+                                         min_value=fechas_val.dt.date.min(), max_value=fechas_val.dt.date.max(), key='fallo_f_ini')
+                f_fin = col_b.date_input("Hasta", value=fechas_val.dt.date.max(),
+                                         min_value=fechas_val.dt.date.min(), max_value=fechas_val.dt.date.max(), key='fallo_f_fin')
+            mask = para_fallo['_fpf'].isna() | ((para_fallo['_fpf'].dt.date >= f_ini) & (para_fallo['_fpf'].dt.date <= f_fin))
+            para_fallo = para_fallo[mask]
+
         alerta_3m = para_fallo[para_fallo['Meses Pendiente'].notna() & (para_fallo['Meses Pendiente'] >= 3)]
         alerta_6m = para_fallo[para_fallo['Meses Pendiente'].notna() & (para_fallo['Meses Pendiente'] >= 6)]
     else:
@@ -615,7 +680,11 @@ def modulo_fallos(df: pd.DataFrame):
                 if val >= 3: return ['background-color: #FFF2CC'] * len(row)
                 return [''] * len(row)
 
-            st.dataframe(df_show.reset_index(drop=True), use_container_width=True, height=420)
+            df_show_exp = df_show.reset_index(drop=True)
+            st.dataframe(df_show_exp, use_container_width=True, height=420)
+            st.download_button("⬇️ Exportar Para Fallo (Excel)", data=df_a_excel(df_show_exp, 'Para Fallo'),
+                               file_name=f"para_fallo_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                               mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             if len(alerta_6m) > 0:
                 st.warning(f"⚠️ {len(alerta_6m)} causas llevan 6+ meses sin fallo. Revisar con urgencia.")
 
@@ -1083,9 +1152,17 @@ if modulo.startswith("🏠"):
             df, tipo = parse_xls(file_bytes, uploaded.name)
 
         if df is None:
-            st.error(f"Error al leer el archivo: {tipo}")
+            st.error(f"❌ {tipo}")
+            st.info("**Posibles causas:** el archivo está protegido, corrupto, o no es un reporte SITCI. Intenta exportarlo nuevamente desde el SITCI en formato XLS.")
         elif tipo == 'desconocido':
-            st.warning("No se pudo detectar el tipo de archivo. Verifica que sea un reporte SITCI.")
+            st.warning("⚠️ No se pudo identificar el tipo de archivo automáticamente.")
+            st.markdown(f"**Columnas detectadas:** `{', '.join(df.columns.tolist()[:10])}`")
+            st.markdown("""**El sistema espera al menos una de estas columnas para identificar el tipo:**
+- **Resoluciones:** `Funcionario de Bloqueo` o `Nomenclatura`
+- **Escritos:** `Tipo Escrito` + `Complejidad`
+- **Incidentes:** `Tipo Cuaderno` + `Estado Cuaderno`
+- **Fallos:** `Fecha Para Fallo` o `Estado Boletin`
+""")
             st.dataframe(df.head(5))
         else:
             tipo_label = {
