@@ -13,6 +13,7 @@ import xlrd
 import bcrypt
 import os
 import sqlite3
+import bisect
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -707,6 +708,266 @@ def modulo_fallos(df: pd.DataFrame):
         st.plotly_chart(fig, use_container_width=True)
 
 
+def modulo_demoras(df_esc: pd.DataFrame, df_res: pd.DataFrame):
+    st.markdown('<div class="sec-title">⏱️ Demora en Tramitación</div>', unsafe_allow_html=True)
+
+    # ── Detectar columnas ─────────────────────────────────────────────────────
+    rol_esc_col   = next((c for c in df_esc.columns if 'rol' in c.lower() and 'control' not in c.lower()), None)
+    rol_res_col   = next((c for c in df_res.columns if 'rol' in c.lower() and 'control' not in c.lower()), None)
+    fecha_esc_col = next((c for c in df_esc.columns if 'fecha' in c.lower()), None)
+    fecha_res_col = next((c for c in df_res.columns if 'firma' in c.lower()), None) or \
+                    next((c for c in df_res.columns if 'fecha' in c.lower()), None)
+    func_col      = next((c for c in df_esc.columns if 'funcionario' in c.lower()), None)
+    comp_col      = next((c for c in df_esc.columns if 'complejidad' in c.lower()), None)
+    tipo_col      = next((c for c in df_esc.columns if 'tipo' in c.lower() and 'escrito' in c.lower()), None)
+
+    faltantes = []
+    if not rol_esc_col:   faltantes.append("ROL en escritos")
+    if not rol_res_col:   faltantes.append("ROL en resoluciones")
+    if not fecha_esc_col: faltantes.append("fecha en escritos")
+    if not fecha_res_col: faltantes.append("fecha en resoluciones")
+    if faltantes:
+        st.error(f"No se encontraron columnas: {', '.join(faltantes)}.")
+        with st.expander("Columnas disponibles"):
+            st.write("**Escritos:**", df_esc.columns.tolist())
+            st.write("**Resoluciones:**", df_res.columns.tolist())
+        return
+
+    # ── Preparar datos ────────────────────────────────────────────────────────
+    esc = df_esc.copy()
+    res = df_res.copy()
+
+    esc['_rol']       = esc[rol_esc_col].astype(str).str.strip().str.upper()
+    res['_rol']       = res[rol_res_col].astype(str).str.strip().str.upper()
+    esc['_fecha_esc'] = pd.to_datetime(esc[fecha_esc_col], format='%d/%m/%Y', errors='coerce')
+    res['_fecha_res'] = pd.to_datetime(res[fecha_res_col], format='%d/%m/%Y', errors='coerce')
+    esc['_func']      = esc[func_col].apply(normalize_name) if func_col else 'Sin datos'
+
+    # ── Filtros ───────────────────────────────────────────────────────────────
+    with st.expander("🔍 Filtros", expanded=True):
+        fc1, fc2, fc3 = st.columns(3)
+
+        comp_vals = ['(Todas)'] + (sorted(esc[comp_col].dropna().unique().tolist()) if comp_col else [])
+        sel_comp  = fc1.selectbox("Complejidad", comp_vals, key='dem_comp')
+
+        excluir = {'Juez Figueroa', 'Juez Burchard', '--', 'Sin asignar', ''}
+        funcs   = ['(Todos)'] + sorted(f for f in esc['_func'].unique() if f not in excluir)
+        sel_func = fc2.selectbox("Funcionario", funcs, key='dem_func')
+
+        fmin = esc['_fecha_esc'].dropna().dt.date.min() if esc['_fecha_esc'].notna().any() else date.today()
+        fmax = esc['_fecha_esc'].dropna().dt.date.max() if esc['_fecha_esc'].notna().any() else date.today()
+        sel_fecha = fc3.date_input("Rango fechas escrito", value=(fmin, fmax),
+                                   min_value=fmin, max_value=fmax, key='dem_fecha')
+
+    mask = pd.Series(True, index=esc.index)
+    if sel_comp != '(Todas)' and comp_col:
+        mask &= esc[comp_col].astype(str).str.strip() == sel_comp
+    if sel_func != '(Todos)':
+        mask &= esc['_func'] == sel_func
+    if isinstance(sel_fecha, (tuple, list)) and len(sel_fecha) == 2:
+        f_ini, f_fin = sel_fecha
+        mask &= esc['_fecha_esc'].dt.date.between(f_ini, f_fin)
+    esc = esc[mask].copy()
+
+    if esc.empty:
+        st.warning("No hay escritos con los filtros seleccionados.")
+        return
+
+    # ── Calcular demoras ──────────────────────────────────────────────────────
+    # Para cada escrito: primera resolución en el mismo ROL con fecha >= fecha escrito
+    res_valid  = res.dropna(subset=['_fecha_res', '_rol'])
+    res_lookup = (res_valid.groupby('_rol')['_fecha_res']
+                           .apply(lambda s: sorted(s.tolist()))
+                           .to_dict())
+
+    def primera_res_despues(rol, fecha_esc):
+        if pd.isna(fecha_esc) or rol not in res_lookup:
+            return pd.NaT
+        dates = res_lookup[rol]
+        idx = bisect.bisect_left(dates, fecha_esc)
+        return dates[idx] if idx < len(dates) else pd.NaT
+
+    with st.spinner("Calculando demoras..."):
+        esc['_primera_res'] = esc.apply(
+            lambda r: primera_res_despues(r['_rol'], r['_fecha_esc']), axis=1
+        )
+    esc['_demora']      = (esc['_primera_res'] - esc['_fecha_esc']).dt.days
+    hoy                 = pd.Timestamp.today().normalize()
+    esc['_demora_acum'] = (hoy - esc['_fecha_esc']).dt.days
+
+    resueltos  = esc.dropna(subset=['_demora'])
+    pendientes = esc[esc['_primera_res'].isna()]
+
+    if resueltos.empty:
+        st.warning("No se encontraron resoluciones para los escritos del período. "
+                   "Verifica que ambos archivos correspondan al mismo período y tribunal.")
+        return
+
+    # ── KPIs globales con semáforo institucional ──────────────────────────────
+    prom_d = resueltos['_demora'].mean()
+    med_d  = resueltos['_demora'].median()
+    p_le7  = (resueltos['_demora'] <= 7).mean() * 100
+    p_le2  = (resueltos['_demora'] <= 2).mean() * 100
+    n_pend = len(pendientes)
+    oldest = int(pendientes['_demora_acum'].max()) if not pendientes.empty else 0
+
+    def _sem(v, verde, amarillo, inv=False):
+        """Retorna (icono, clase_css). inv=True cuando menor es peor."""
+        if not inv:
+            if v <= verde:   return '🟢', 'ok'
+            if v <= amarillo: return '🟡', 'warn'
+            return '🔴', 'alerta'
+        else:
+            if v >= verde:   return '🟢', 'ok'
+            if v >= amarillo: return '🟡', 'warn'
+            return '🔴', 'alerta'
+
+    ic1, ic2, ic3, ic4 = st.columns(4)
+    icon, cls = _sem(prom_d, 5, 8)
+    ic1.markdown(f'<div class="kpi-card {cls}"><div class="kpi-val">{icon} {prom_d:.1f}d</div>'
+                 f'<div class="kpi-lab">Promedio demora</div><div class="kpi-meta">Meta ≤ 5 días</div></div>',
+                 unsafe_allow_html=True)
+    icon, cls = _sem(med_d, 4, 7)
+    ic2.markdown(f'<div class="kpi-card {cls}"><div class="kpi-val">{icon} {med_d:.0f}d</div>'
+                 f'<div class="kpi-lab">Mediana demora</div><div class="kpi-meta">Meta ≤ 4 días</div></div>',
+                 unsafe_allow_html=True)
+    icon, cls = _sem(p_le7, 80, 65, inv=True)
+    ic3.markdown(f'<div class="kpi-card {cls}"><div class="kpi-val">{icon} {p_le7:.0f}%</div>'
+                 f'<div class="kpi-lab">Resueltos ≤ 7 días</div><div class="kpi-meta">Meta ≥ 80%</div></div>',
+                 unsafe_allow_html=True)
+    ic4.markdown(f'<div class="kpi-card"><div class="kpi-val">{p_le2:.0f}%</div>'
+                 f'<div class="kpi-lab">Resueltos ≤ 2 días</div><div class="kpi-meta">Referencia</div></div>',
+                 unsafe_allow_html=True)
+
+    ic1b, ic2b, ic3b, _ = st.columns(4)
+    ic1b.markdown(f'<div class="kpi-card ok"><div class="kpi-val">{len(resueltos):,}</div>'
+                  f'<div class="kpi-lab">Escritos resueltos</div></div>', unsafe_allow_html=True)
+    icon, cls = _sem(oldest, 7, 14)
+    ic2b.markdown(f'<div class="kpi-card {cls}"><div class="kpi-val">{icon} {oldest}d</div>'
+                  f'<div class="kpi-lab">Pendiente más antiguo</div><div class="kpi-meta">Meta ≤ 7 días</div></div>',
+                  unsafe_allow_html=True)
+    cls_p = 'alerta' if n_pend > 0 else 'ok'
+    ic3b.markdown(f'<div class="kpi-card {cls_p}"><div class="kpi-val">{n_pend:,}</div>'
+                  f'<div class="kpi-lab">Sin resolución aún</div></div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # ── Por funcionario ───────────────────────────────────────────────────────
+    st.markdown("#### Cumplimiento por Funcionario")
+    res_func = resueltos[~resueltos['_func'].isin(excluir)]
+
+    if not res_func.empty:
+        grp   = res_func.groupby('_func')['_demora']
+        agg   = grp.agg(Total='count', Promedio='mean', Mediana='median').reset_index()
+        p7_s  = grp.apply(lambda x: (x <= 7).mean() * 100).reset_index(name='% ≤7d')
+        p2_s  = grp.apply(lambda x: (x <= 2).mean() * 100).reset_index(name='% ≤2d')
+        agg   = agg.merge(p7_s, on='_func').merge(p2_s, on='_func')
+
+        pend_cnt = (pendientes[~pendientes['_func'].isin(excluir)]
+                    .groupby('_func').size().reset_index(name='Pendientes'))
+        agg = agg.merge(pend_cnt, on='_func', how='left').fillna({'Pendientes': 0})
+        agg['Pendientes'] = agg['Pendientes'].astype(int)
+
+        def sem_row(row):
+            p, m, p7 = row['Promedio'], row['Mediana'], row['% ≤7d']
+            if p <= 5 and m <= 4 and p7 >= 80: return '🟢 Verde'
+            if p <= 8 and m <= 7 and p7 >= 65: return '🟡 Amarillo'
+            return '🔴 Rojo'
+
+        agg['Estado']   = agg.apply(sem_row, axis=1)
+        agg['Promedio'] = agg['Promedio'].round(1)
+        agg['Mediana']  = agg['Mediana'].round(0).astype(int)
+        agg['% ≤7d']    = agg['% ≤7d'].round(0).astype(int).astype(str) + '%'
+        agg['% ≤2d']    = agg['% ≤2d'].round(0).astype(int).astype(str) + '%'
+        agg = agg.sort_values('Promedio').reset_index(drop=True)
+        agg.index += 1
+        agg = agg.rename(columns={'_func': 'Funcionario'})
+
+        st.dataframe(
+            agg[['Funcionario', 'Total', 'Promedio', 'Mediana', '% ≤7d', '% ≤2d', 'Pendientes', 'Estado']],
+            use_container_width=True, height=360
+        )
+        st.download_button(
+            "⬇️ Exportar tabla (Excel)",
+            data=df_a_excel(agg, 'Demoras'),
+            file_name=f"demoras_{datetime.now().strftime('%Y%m%d')}.xlsx",
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        # Gráfico promedio por funcionario
+        fig = px.bar(
+            agg.sort_values('Promedio', ascending=True),
+            x='Promedio', y='Funcionario', orientation='h',
+            color='Promedio',
+            color_continuous_scale=['#375623', '#BF8F00', '#C00000'],
+            range_color=[0, max(float(agg['Promedio'].max()) if not agg.empty else 10, 10)],
+            text='Promedio',
+        )
+        fig.add_vline(x=5, line_dash='dash', line_color='#1F3864',
+                      annotation_text='Meta 5d', annotation_position='top right')
+        fig.update_layout(height=380, plot_bgcolor='white', paper_bgcolor='white',
+                          margin=dict(l=10, r=20, t=20, b=10),
+                          coloraxis_showscale=False,
+                          xaxis_title='Promedio días', yaxis_title='')
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("---")
+
+    # ── Distribución + ranking de tipos lentos ────────────────────────────────
+    st.markdown("#### Distribución y tipos más lentos")
+    col_hist, col_rank = st.columns(2)
+
+    with col_hist:
+        fig_h = px.histogram(
+            resueltos, x='_demora', nbins=30,
+            color_discrete_sequence=['#2E75B6'],
+            labels={'_demora': 'Días de demora'},
+            title='Distribución de tiempos de respuesta',
+        )
+        fig_h.add_vline(x=5, line_dash='dash', line_color='#375623',
+                        annotation_text='Meta 5d', annotation_position='top right')
+        fig_h.add_vline(x=7, line_dash='dot', line_color='#BF8F00',
+                        annotation_text='Límite 7d', annotation_position='top left')
+        fig_h.update_layout(height=340, plot_bgcolor='white', paper_bgcolor='white',
+                             margin=dict(l=10, r=10, t=40, b=10),
+                             yaxis_title='Cantidad escritos')
+        st.plotly_chart(fig_h, use_container_width=True)
+
+    with col_rank:
+        if tipo_col and tipo_col in resueltos.columns:
+            tipo_stats = (resueltos.groupby(tipo_col)['_demora']
+                          .agg(Promedio='mean', Total='count')
+                          .reset_index())
+            tipo_stats = (tipo_stats[tipo_stats['Total'] >= 5]
+                          .sort_values('Promedio', ascending=False)
+                          .head(15))
+            tipo_stats['Promedio'] = tipo_stats['Promedio'].round(1)
+            tipo_stats.index = range(1, len(tipo_stats) + 1)
+            tipo_stats.columns = ['Tipo Escrito', 'Prom. días', 'Total']
+            st.markdown("**Top 15 tipos más lentos** (≥ 5 escritos)")
+            st.dataframe(tipo_stats, use_container_width=True, height=340)
+        else:
+            st.info("No se detectó columna de tipo de escrito.")
+
+    # ── Pendientes más antiguos ────────────────────────────────────────────────
+    if not pendientes.empty:
+        st.markdown("---")
+        st.markdown(f"#### ⚠️ Escritos sin resolución — {n_pend:,} pendientes")
+        pend_show = pendientes[~pendientes['_func'].isin(excluir)].copy()
+        pend_show = pend_show.sort_values('_demora_acum', ascending=False)
+        cols_pend = [c for c in ['_func', '_rol', tipo_col, fecha_esc_col, '_demora_acum']
+                     if c and c in pend_show.columns]
+        rename_map = {'_func': 'Funcionario', '_rol': 'ROL',
+                      '_demora_acum': 'Días acumulados'}
+        if tipo_col:
+            rename_map[tipo_col] = 'Tipo Escrito'
+        if fecha_esc_col:
+            rename_map[fecha_esc_col] = 'Fecha Escrito'
+        pend_show = pend_show[cols_pend].rename(columns=rename_map).head(50)
+        pend_show.index = range(1, len(pend_show) + 1)
+        st.dataframe(pend_show, use_container_width=True, height=340)
+
+
 def modulo_asignacion():
     st.markdown('<div class="sec-title">📌 Generador de Asignaciones</div>', unsafe_allow_html=True)
 
@@ -1105,6 +1366,7 @@ with st.sidebar:
         "🏠  Inicio / Upload",
         "📊  Resoluciones",
         "📨  Escritos",
+        "⏱️  Demoras",
         "⚖️   Incidentes",
         "📋  Fallos",
         "📌  Asignaciones",
@@ -1213,6 +1475,18 @@ elif modulo.startswith("📨"):
     else:
         st.info("📁 Sube el archivo de **Escritos** en el módulo Inicio para ver el análisis.")
         st.markdown("*Ejemplo: INGRESO_ESCRITO_ENERO.xls*")
+
+elif modulo.startswith("⏱️"):
+    tiene_esc = 'escritos'     in st.session_state.datos
+    tiene_res = 'resoluciones' in st.session_state.datos
+    if tiene_esc and tiene_res:
+        modulo_demoras(st.session_state.datos['escritos'], st.session_state.datos['resoluciones'])
+    else:
+        faltantes = []
+        if not tiene_esc: faltantes.append("**Escritos**")
+        if not tiene_res: faltantes.append("**Resoluciones**")
+        st.info(f"📁 Este módulo requiere cargar: {' y '.join(faltantes)}. Ve a **Inicio / Upload**.")
+        st.markdown("*Sube ambos archivos SITCI (escritos y resoluciones) del mismo período.*")
 
 elif modulo.startswith("⚖️"):
     if 'incidentes' in st.session_state.datos:
