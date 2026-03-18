@@ -12,8 +12,83 @@ import io
 import xlrd
 import bcrypt
 import os
+import sqlite3
 import warnings
 warnings.filterwarnings('ignore')
+
+# ─── BASE DE DATOS SQLITE ─────────────────────────────────────────────────────
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gestion_2jcs.db')
+
+def init_db():
+    """Crea las tablas si no existen."""
+    con = sqlite3.connect(DB_PATH)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS historial_archivos (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha     TEXT NOT NULL,
+            archivo   TEXT NOT NULL,
+            tipo      TEXT NOT NULL,
+            registros INTEGER NOT NULL,
+            usuario   TEXT NOT NULL DEFAULT ''
+        )
+    """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS kpi_snapshots (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha      TEXT NOT NULL,
+            tipo       TEXT NOT NULL,
+            kpi_nombre TEXT NOT NULL,
+            kpi_valor  REAL NOT NULL,
+            usuario    TEXT NOT NULL DEFAULT ''
+        )
+    """)
+    con.commit()
+    con.close()
+
+def db_guardar_historial(archivo: str, tipo: str, registros: int, usuario: str):
+    con = sqlite3.connect(DB_PATH)
+    con.execute(
+        "INSERT INTO historial_archivos (fecha, archivo, tipo, registros, usuario) VALUES (?,?,?,?,?)",
+        (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), archivo, tipo, registros, usuario)
+    )
+    con.commit()
+    con.close()
+
+def db_guardar_kpis(kpis_dict: dict, usuario: str):
+    """Guarda un snapshot de KPIs numéricos con fecha actual."""
+    fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    con   = sqlite3.connect(DB_PATH)
+    for nombre, valor in kpis_dict.items():
+        if valor is not None:
+            con.execute(
+                "INSERT INTO kpi_snapshots (fecha, tipo, kpi_nombre, kpi_valor, usuario) VALUES (?,?,?,?,?)",
+                (fecha, 'snapshot', nombre, float(valor), usuario)
+            )
+    con.commit()
+    con.close()
+
+def db_cargar_historial() -> pd.DataFrame:
+    con = sqlite3.connect(DB_PATH)
+    df  = pd.read_sql_query(
+        "SELECT fecha, archivo AS 'Archivo', tipo AS 'Tipo', registros AS 'Registros', usuario AS 'Usuario' "
+        "FROM historial_archivos ORDER BY id DESC LIMIT 100",
+        con
+    )
+    con.close()
+    df.rename(columns={'fecha': 'Procesado'}, inplace=True)
+    return df
+
+def db_cargar_kpi_historico() -> pd.DataFrame:
+    con = sqlite3.connect(DB_PATH)
+    df  = pd.read_sql_query(
+        "SELECT fecha, kpi_nombre, kpi_valor FROM kpi_snapshots ORDER BY id ASC",
+        con
+    )
+    con.close()
+    return df
+
+# Inicializar DB al arrancar
+init_db()
 
 def _cargar_usuarios_desde_env() -> dict:
     """Lee usuarios y hashes desde variables de entorno o archivo .env."""
@@ -887,14 +962,57 @@ def modulo_dashboard():
                           showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
-    # ── Historial ─────────────────────────────────────────────────────────────
+    # ── Guardar snapshot de KPIs actuales en DB ────────────────────────────────
+    if kpis:
+        snapshot = {}
+        if clearance_rate is not None:
+            snapshot['Clearance Rate (%)'] = clearance_rate
+        if 'resoluciones' in kpis:
+            snapshot['Resoluciones/día'] = kpis['resoluciones']['prom_dia']
+            snapshot['Total Resoluciones'] = kpis['resoluciones']['total']
+        if 'incidentes' in kpis:
+            snapshot['Resolución Incidentes (%)'] = kpis['incidentes']['tasa']
+        if 'fallos' in kpis:
+            snapshot['Fallos > 3 meses'] = kpis['fallos']['alerta_3m']
+            snapshot['Fallos > 6 meses'] = kpis['fallos']['alerta_6m']
+        db_guardar_kpis(snapshot, st.session_state.get('usuario', ''))
+
+    # ── Tendencia histórica de KPIs ────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("#### 📈 Tendencia histórica de KPIs")
+    hist_kpi = db_cargar_kpi_historico()
+    if not hist_kpi.empty:
+        kpi_opciones = hist_kpi['kpi_nombre'].unique().tolist()
+        kpi_sel = st.multiselect(
+            "Selecciona KPIs a graficar",
+            options=kpi_opciones,
+            default=[k for k in ['Clearance Rate (%)', 'Resoluciones/día'] if k in kpi_opciones],
+        )
+        if kpi_sel:
+            df_plot = hist_kpi[hist_kpi['kpi_nombre'].isin(kpi_sel)].copy()
+            df_plot['fecha'] = pd.to_datetime(df_plot['fecha'])
+            fig_trend = px.line(
+                df_plot, x='fecha', y='kpi_valor', color='kpi_nombre',
+                markers=True,
+                labels={'fecha': 'Fecha', 'kpi_valor': 'Valor', 'kpi_nombre': 'KPI'},
+                color_discrete_sequence=['#1F3864', '#2E75B6', '#375623', '#BF8F00', '#C00000'],
+            )
+            fig_trend.update_layout(
+                height=320, plot_bgcolor='white', paper_bgcolor='white',
+                margin=dict(l=10, r=10, t=20, b=20), legend_title='',
+            )
+            st.plotly_chart(fig_trend, use_container_width=True)
+    else:
+        st.info("El gráfico de tendencia se irá construyendo cada vez que visites el Dashboard con datos cargados.")
+
+    # ── Historial de archivos desde DB ────────────────────────────────────────
     st.markdown("---")
     st.markdown("#### 📁 Historial de archivos procesados")
-    if 'historial' in st.session_state and st.session_state.historial:
-        hist_df = pd.DataFrame(st.session_state.historial)
-        st.dataframe(hist_df, use_container_width=True)
+    hist_df = db_cargar_historial()
+    if not hist_df.empty:
+        st.dataframe(hist_df, use_container_width=True, height=280)
     else:
-        st.info("Ningún archivo procesado aún en esta sesión.")
+        st.info("Ningún archivo procesado aún.")
 
 
 # ─── SIDEBAR ─────────────────────────────────────────────────────────────────
@@ -945,8 +1063,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Inicializar session state
-if 'historial' not in st.session_state:
-    st.session_state.historial = []
 if 'datos' not in st.session_state:
     st.session_state.datos = {}
 
@@ -981,15 +1097,11 @@ if modulo.startswith("🏠"):
 
             st.success(f"✅ Archivo detectado: **{tipo_label}**  ·  {len(df):,} registros")
             st.session_state.datos[tipo] = df
-            st.session_state.historial.append({
-                'Archivo': uploaded.name,
-                'Tipo': tipo_label,
-                'Registros': len(df),
-                'Procesado': datetime.now().strftime('%d/%m/%Y %H:%M'),
-            })
+            usuario_actual = st.session_state.get('usuario', '')
+            db_guardar_historial(uploaded.name, tipo_label, len(df), usuario_actual)
             st.info(f"👉 Ve al módulo **{tipo_label}** en el menú lateral para ver el análisis completo.")
 
-    # Estado de datos cargados
+    # Estado de datos cargados en esta sesión
     if st.session_state.datos:
         st.markdown("### Datos disponibles en esta sesión")
         for t, d in st.session_state.datos.items():
