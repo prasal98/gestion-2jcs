@@ -10,8 +10,32 @@ import plotly.express as px
 from datetime import datetime, date
 import io
 import xlrd
+import bcrypt
+import os
 import warnings
 warnings.filterwarnings('ignore')
+
+def _cargar_usuarios_desde_env() -> dict:
+    """Lee usuarios y hashes desde variables de entorno o archivo .env."""
+    # Cargar .env manualmente si existe
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_path):
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, _, value = line.partition('=')
+                    os.environ.setdefault(key.strip(), value.strip())
+
+    usuarios = {}
+    prefijos = ['PEDRO', 'FIGUEROA', 'COORDINADOR']
+    nombres_usuario = {'PEDRO': 'pedro', 'FIGUEROA': 'figueroa', 'COORDINADOR': 'coordinador'}
+    for prefijo in prefijos:
+        valor = os.environ.get(f'{prefijo}_HASH', '')
+        if '|' in valor:
+            hash_pwd, nombre = valor.split('|', 1)
+            usuarios[nombres_usuario[prefijo]] = (nombre.strip(), hash_pwd.strip().encode())
+    return usuarios
 
 # ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -22,20 +46,16 @@ st.set_page_config(
 )
 
 # ─── USUARIOS AUTORIZADOS ─────────────────────────────────────────────────────
-# Para agregar un usuario nuevo: agrega una línea con 'usuario': ('Nombre Completo', 'contraseña')
-# Para cambiar contraseña: modifica el valor entre comillas
-USUARIOS = {
-    'pedro':        ('Pedro Salazar · Coordinador',  'jcs2026'),
-    'figueroa':     ('Juez Figueroa · Titular',       'juez2026'),
-    'coordinador':  ('Coordinador · Tribunal',        'tribunal2026'),
-}
+# Las credenciales se cargan desde el archivo .env (nunca en texto plano aquí)
+# Para agregar un usuario: agrega NUEVO_HASH=<hash_bcrypt>|Nombre Completo en .env
+USUARIOS = _cargar_usuarios_desde_env()
 
 def check_password(usuario: str, password: str) -> bool:
     user_data = USUARIOS.get(usuario.lower().strip())
     if not user_data:
         return False
-    _, pwd_correcta = user_data
-    return password == pwd_correcta
+    _, hash_guardado = user_data
+    return bcrypt.checkpw(password.encode(), hash_guardado)
 
 def login_screen():
     st.markdown("""
