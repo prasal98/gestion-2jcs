@@ -565,38 +565,136 @@ def modulo_fallos(df: pd.DataFrame):
 
 def modulo_asignacion():
     st.markdown('<div class="sec-title">📌 Generador de Asignaciones</div>', unsafe_allow_html=True)
-    st.info("Sube el archivo de incidentes para generar asignaciones por funcionario.")
 
-    funcionarios = [
+    TRAMITADORES = [
         'Jorge', 'Robinson', 'Camila Rivera', 'Cristián Rivas',
         'Francisca Cristiny', 'Nicolás Lorenzoni', 'Max Ñaguil',
         'Camilo Ross', 'Marcos Ríos'
     ]
 
+    datos  = st.session_state.get('datos', {})
+    df_inc = datos.get('incidentes')
+
+    tipo_col = estado_col = rol_col = proc_col = mat_col = None
+    if df_inc is not None:
+        tipo_col   = next((c for c in df_inc.columns if 'cuaderno' in c.lower() and 'tipo' in c.lower()), None)
+        estado_col = next((c for c in df_inc.columns if 'estado' in c.lower()), None)
+        rol_col    = next((c for c in df_inc.columns if c.strip().upper() == 'ROL'), None)
+        proc_col   = next((c for c in df_inc.columns if 'procedimiento' in c.lower()), None)
+        mat_col    = next((c for c in df_inc.columns if 'materia' in c.lower()), None)
+
+    # ── Panel de configuración ─────────────────────────────────────────────
     col1, col2 = st.columns([1, 2])
     with col1:
         st.markdown("**Configurar asignación**")
-        n_por_func = st.number_input("Causas por funcionario", min_value=1, max_value=10, value=4)
-        incluir_dilatorias = st.checkbox("Excepciones Dilatorias", value=True)
-        incluir_nulidad    = st.checkbox("Nulidad de lo Obrado", value=True)
+        n_por_func          = st.number_input("Causas por funcionario", min_value=1, max_value=15, value=4)
+        incluir_dilatorias  = st.checkbox("Excepciones Dilatorias", value=True)
+        incluir_nulidad     = st.checkbox("Nulidad de lo Obrado", value=True)
         incluir_acumulacion = st.checkbox("Incidente Acumulación", value=True)
-        urgente_rol = st.text_input("ROL urgente (opcional)", placeholder="C-15500-2025")
-        urgente_func = st.selectbox("Asignar urgente a", [''] + funcionarios) if urgente_rol else ''
+        urgente_rol  = st.text_input("ROL urgente (opcional)", placeholder="C-15500-2025")
+        urgente_func = st.selectbox("Asignar urgente a", [''] + TRAMITADORES) if urgente_rol else ''
 
+    # ── Panel de estado de pendientes ─────────────────────────────────────
     with col2:
-        st.markdown("**Estado actual de pendientes**")
-        st.markdown("""
-        | Tipo | Pendientes | % Resolución |
-        |------|-----------|-------------|
-        | 🔵 Excepciones Dilatorias | 54 | 54.6% |
-        | 🟡 Nulidad de lo Obrado | 48 | 67.3% |
-        | 🔴 Incidente Acumulación | 17 | **0%** |
-        | Desistimiento | 9 | 90.3% |
-        """)
-        if urgente_rol:
-            st.markdown(f'<div class="urgente">⚠ URGENTE: {urgente_rol} → {urgente_func}</div>', unsafe_allow_html=True)
+        if df_inc is not None and tipo_col and estado_col:
+            st.markdown("**Estado real de pendientes (datos SITCI)**")
+            pendientes_df = df_inc[df_inc[estado_col].str.strip().isin(['Tramitación', 'Suspendido'])]
+            total_tipo    = df_inc[tipo_col].value_counts()
+            resumen = []
+            for tipo, pend_n in pendientes_df[tipo_col].value_counts().items():
+                total_n = total_tipo.get(tipo, pend_n)
+                tasa    = round((total_n - pend_n) / total_n * 100, 1) if total_n else 0
+                resumen.append({'Tipo de incidente': tipo, 'Pendientes': int(pend_n), '% Resolución': f'{tasa}%'})
+            resumen_df = pd.DataFrame(resumen).sort_values('Pendientes', ascending=False)
+            st.dataframe(resumen_df, use_container_width=True, height=260)
+        else:
+            st.markdown("**Estado referencial (sin datos cargados)**")
+            st.markdown("""
+| Tipo | Pendientes | % Resolución |
+|------|-----------|-------------|
+| Excepciones Dilatorias | 54 | 54.6% |
+| Nulidad de lo Obrado | 48 | 67.3% |
+| Incidente Acumulación | 17 | 0% |
+| Desistimiento | 9 | 90.3% |
+""")
+            if urgente_rol and urgente_func:
+                st.markdown(f'<div class="urgente">⚠ URGENTE: {urgente_rol} → {urgente_func}</div>', unsafe_allow_html=True)
+            st.info("📁 Sube el archivo de **Incidentes** en Inicio para generar asignaciones con ROLes reales.")
 
-    st.caption("La asignación detallada con roles reales requiere subir el archivo de incidentes actualizado.")
+    # ── Generación de asignaciones ─────────────────────────────────────────
+    if df_inc is not None and tipo_col and estado_col:
+        st.markdown("---")
+        if st.button("🔄 Generar asignaciones", type="primary"):
+
+            pool = df_inc[df_inc[estado_col].str.strip().isin(['Tramitación', 'Suspendido'])].copy()
+
+            # Filtrar por tipos seleccionados
+            filtros = []
+            if incluir_dilatorias:  filtros.append('Dilatoria')
+            if incluir_nulidad:     filtros.append('Nulidad')
+            if incluir_acumulacion: filtros.append('Acumulaci')
+            if filtros:
+                mask = pd.Series(False, index=pool.index)
+                for t in filtros:
+                    mask |= pool[tipo_col].str.contains(t, case=False, na=False)
+                pool = pool[mask]
+
+            if pool.empty:
+                st.warning("No hay causas pendientes que coincidan con los filtros seleccionados.")
+                return
+
+            # Separar causa urgente
+            urgente_rows = pd.DataFrame()
+            if urgente_rol and rol_col:
+                mask_urg    = pool[rol_col].astype(str).str.contains(urgente_rol.strip(), case=False, na=False)
+                urgente_rows = pool[mask_urg]
+                pool         = pool[~mask_urg]
+
+            # Barajar para distribución equitativa
+            pool = pool.sample(frac=1, random_state=42).reset_index(drop=True)
+
+            # Distribución round-robin con límite n_por_func
+            cols_show  = [c for c in [rol_col, tipo_col, proc_col, mat_col] if c]
+            asignaciones = []
+
+            if not urgente_rows.empty and urgente_func:
+                for _, row in urgente_rows.iterrows():
+                    entry = {c: row.get(c, '') for c in cols_show}
+                    entry.update({'Funcionario': urgente_func, 'Urgente': '⚠️ SÍ'})
+                    asignaciones.append(entry)
+
+            func_count = {f: 0 for f in TRAMITADORES}
+            for _, row in pool.iterrows():
+                elegibles = [f for f in TRAMITADORES if func_count[f] < n_por_func]
+                if not elegibles:
+                    break
+                func = min(elegibles, key=lambda f: func_count[f])
+                func_count[func] += 1
+                entry = {c: row.get(c, '') for c in cols_show}
+                entry.update({'Funcionario': func, 'Urgente': ''})
+                asignaciones.append(entry)
+
+            result_df = pd.DataFrame(asignaciones)
+            col_order = ['Funcionario', 'Urgente'] + [c for c in cols_show if c in result_df.columns]
+            result_df = result_df[[c for c in col_order if c in result_df.columns]]
+
+            n_func_activos = sum(1 for v in func_count.values() if v > 0)
+            st.success(f"✅ {len(result_df)} causas asignadas a {n_func_activos} funcionarios")
+            st.dataframe(result_df, use_container_width=True, height=420)
+
+            # Resumen por funcionario
+            st.markdown("**Resumen por funcionario**")
+            resumen_func = result_df.groupby('Funcionario').size().reset_index(name='Causas asignadas').sort_values('Causas asignadas', ascending=False)
+            st.dataframe(resumen_func, use_container_width=True)
+
+            # Descargar CSV
+            csv = result_df.to_csv(index=False).encode('utf-8-sig')
+            st.download_button(
+                "⬇️ Descargar asignaciones (CSV)",
+                data=csv,
+                file_name=f"asignaciones_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime='text/csv',
+            )
 
 
 def modulo_dashboard():
