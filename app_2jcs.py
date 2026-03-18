@@ -10,8 +10,108 @@ import plotly.express as px
 from datetime import datetime, date
 import io
 import xlrd
+import bcrypt
+import os
+import sqlite3
+import bisect
 import warnings
 warnings.filterwarnings('ignore')
+
+# ─── BASE DE DATOS SQLITE ─────────────────────────────────────────────────────
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gestion_2jcs.db')
+
+def init_db():
+    """Crea las tablas si no existen."""
+    con = sqlite3.connect(DB_PATH)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS historial_archivos (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha     TEXT NOT NULL,
+            archivo   TEXT NOT NULL,
+            tipo      TEXT NOT NULL,
+            registros INTEGER NOT NULL,
+            usuario   TEXT NOT NULL DEFAULT ''
+        )
+    """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS kpi_snapshots (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha      TEXT NOT NULL,
+            tipo       TEXT NOT NULL,
+            kpi_nombre TEXT NOT NULL,
+            kpi_valor  REAL NOT NULL,
+            usuario    TEXT NOT NULL DEFAULT ''
+        )
+    """)
+    con.commit()
+    con.close()
+
+def db_guardar_historial(archivo: str, tipo: str, registros: int, usuario: str):
+    con = sqlite3.connect(DB_PATH)
+    con.execute(
+        "INSERT INTO historial_archivos (fecha, archivo, tipo, registros, usuario) VALUES (?,?,?,?,?)",
+        (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), archivo, tipo, registros, usuario)
+    )
+    con.commit()
+    con.close()
+
+def db_guardar_kpis(kpis_dict: dict, usuario: str):
+    """Guarda un snapshot de KPIs numéricos con fecha actual."""
+    fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    con   = sqlite3.connect(DB_PATH)
+    for nombre, valor in kpis_dict.items():
+        if valor is not None:
+            con.execute(
+                "INSERT INTO kpi_snapshots (fecha, tipo, kpi_nombre, kpi_valor, usuario) VALUES (?,?,?,?,?)",
+                (fecha, 'snapshot', nombre, float(valor), usuario)
+            )
+    con.commit()
+    con.close()
+
+def db_cargar_historial() -> pd.DataFrame:
+    con = sqlite3.connect(DB_PATH)
+    df  = pd.read_sql_query(
+        "SELECT fecha, archivo AS 'Archivo', tipo AS 'Tipo', registros AS 'Registros', usuario AS 'Usuario' "
+        "FROM historial_archivos ORDER BY id DESC LIMIT 100",
+        con
+    )
+    con.close()
+    df.rename(columns={'fecha': 'Procesado'}, inplace=True)
+    return df
+
+def db_cargar_kpi_historico() -> pd.DataFrame:
+    con = sqlite3.connect(DB_PATH)
+    df  = pd.read_sql_query(
+        "SELECT fecha, kpi_nombre, kpi_valor FROM kpi_snapshots ORDER BY id ASC",
+        con
+    )
+    con.close()
+    return df
+
+# Inicializar DB al arrancar
+init_db()
+
+def _cargar_usuarios_desde_env() -> dict:
+    """Lee usuarios y hashes desde variables de entorno o archivo .env."""
+    # Cargar .env manualmente si existe
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_path):
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, _, value = line.partition('=')
+                    os.environ.setdefault(key.strip(), value.strip())
+
+    usuarios = {}
+    prefijos = ['PEDRO', 'FIGUEROA', 'COORDINADOR']
+    nombres_usuario = {'PEDRO': 'pedro', 'FIGUEROA': 'figueroa', 'COORDINADOR': 'coordinador'}
+    for prefijo in prefijos:
+        valor = os.environ.get(f'{prefijo}_HASH', '')
+        if '|' in valor:
+            hash_pwd, nombre = valor.split('|', 1)
+            usuarios[nombres_usuario[prefijo]] = (nombre.strip(), hash_pwd.strip().encode())
+    return usuarios
 
 # ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -22,20 +122,16 @@ st.set_page_config(
 )
 
 # ─── USUARIOS AUTORIZADOS ─────────────────────────────────────────────────────
-# Para agregar un usuario nuevo: agrega una línea con 'usuario': ('Nombre Completo', 'contraseña')
-# Para cambiar contraseña: modifica el valor entre comillas
-USUARIOS = {
-    'pedro':        ('Pedro Salazar · Coordinador',  'jcs2026'),
-    'figueroa':     ('Juez Figueroa · Titular',       'juez2026'),
-    'coordinador':  ('Coordinador · Tribunal',        'tribunal2026'),
-}
+# Las credenciales se cargan desde el archivo .env (nunca en texto plano aquí)
+# Para agregar un usuario: agrega NUEVO_HASH=<hash_bcrypt>|Nombre Completo en .env
+USUARIOS = _cargar_usuarios_desde_env()
 
 def check_password(usuario: str, password: str) -> bool:
     user_data = USUARIOS.get(usuario.lower().strip())
     if not user_data:
         return False
-    _, pwd_correcta = user_data
-    return password == pwd_correcta
+    _, hash_guardado = user_data
+    return bcrypt.checkpw(password.encode(), hash_guardado)
 
 def login_screen():
     st.markdown("""
@@ -238,28 +334,57 @@ def detect_file_type(df_head: list) -> str:
 
 @st.cache_data(show_spinner=False)
 def parse_xls(file_bytes: bytes, filename: str):
-    """Lee XLS de SITCI y retorna DataFrame + tipo detectado."""
+    """Lee XLS o XLSX de SITCI y retorna DataFrame + tipo detectado."""
     try:
-        wb = xlrd.open_workbook(file_contents=file_bytes)
-        sh = wb.sheets()[0]
-        # Buscar fila de encabezado (primera fila con ≥ 3 celdas no vacías)
-        header_row = 0
-        for i in range(min(10, sh.nrows)):
-            vals = [str(sh.cell_value(i, j)).strip() for j in range(sh.ncols)]
-            if sum(1 for v in vals if v and v != '') >= 3:
-                header_row = i
-                break
-        headers = [str(sh.cell_value(header_row, j)).strip() for j in range(sh.ncols)]
-        data = []
-        for i in range(header_row + 1, sh.nrows):
-            row = [str(sh.cell_value(i, j)).strip() for j in range(sh.ncols)]
-            if any(r for r in row if r and r != ''):
-                data.append(row)
-        df = pd.DataFrame(data, columns=headers)
+        if filename.lower().endswith('.xlsx'):
+            import openpyxl
+            wb   = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
+            sh   = wb.active
+            rows = list(sh.iter_rows(values_only=True))
+            if not rows:
+                return None, 'El archivo XLSX está vacío.'
+            # Fila de encabezado: primera con ≥ 3 celdas no vacías
+            header_row = 0
+            for i, row in enumerate(rows[:10]):
+                vals = [str(v).strip() for v in row if v is not None]
+                if sum(1 for v in vals if v and v.lower() != 'none') >= 3:
+                    header_row = i
+                    break
+            headers = [str(v).strip() if v is not None else '' for v in rows[header_row]]
+            data = []
+            for row in rows[header_row + 1:]:
+                vals = [str(v).strip() if v is not None else '' for v in row]
+                if any(v for v in vals if v and v.lower() != 'none'):
+                    data.append(vals)
+        else:
+            wb = xlrd.open_workbook(file_contents=file_bytes)
+            sh = wb.sheets()[0]
+            header_row = 0
+            for i in range(min(10, sh.nrows)):
+                vals = [str(sh.cell_value(i, j)).strip() for j in range(sh.ncols)]
+                if sum(1 for v in vals if v and v != '') >= 3:
+                    header_row = i
+                    break
+            headers = [str(sh.cell_value(header_row, j)).strip() for j in range(sh.ncols)]
+            data = []
+            for i in range(header_row + 1, sh.nrows):
+                row = [str(sh.cell_value(i, j)).strip() for j in range(sh.ncols)]
+                if any(r for r in row if r and r != ''):
+                    data.append(row)
+
+        df   = pd.DataFrame(data, columns=headers)
+        df   = df.loc[:, df.columns.str.strip() != '']   # quitar columnas sin nombre
         tipo = detect_file_type(headers)
         return df, tipo
     except Exception as e:
-        return None, f'error: {e}'
+        return None, f'Error al leer el archivo: {e}'
+
+def df_a_excel(df: pd.DataFrame, sheet: str = 'Reporte') -> bytes:
+    """Convierte un DataFrame a bytes de Excel descargable."""
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+        df.to_excel(writer, index=True, sheet_name=sheet)
+    return buf.getvalue()
 
 # ─── MÓDULOS ──────────────────────────────────────────────────────────────────
 
@@ -274,8 +399,22 @@ def modulo_resoluciones(df: pd.DataFrame):
         st.error("No se encontró columna de funcionario.")
         return
 
-    df['_func'] = df[func_col].apply(normalize_name)
+    df['_func']  = df[func_col].apply(normalize_name)
     df['_fecha'] = pd.to_datetime(df[fecha_col], format='%d/%m/%Y', errors='coerce') if fecha_col else None
+
+    # Filtro de fechas
+    if fecha_col and df['_fecha'].notna().any():
+        fecha_min = df['_fecha'].dropna().dt.date.min()
+        fecha_max = df['_fecha'].dropna().dt.date.max()
+        with st.expander("📅 Filtrar por rango de fechas"):
+            col_a, col_b = st.columns(2)
+            f_ini = col_a.date_input("Desde", value=fecha_min, min_value=fecha_min, max_value=fecha_max, key='res_f_ini')
+            f_fin = col_b.date_input("Hasta", value=fecha_max, min_value=fecha_min, max_value=fecha_max, key='res_f_fin')
+        mask = df['_fecha'].isna() | ((df['_fecha'].dt.date >= f_ini) & (df['_fecha'].dt.date <= f_fin))
+        df = df[mask]
+        if df.empty:
+            st.warning("No hay datos en el rango seleccionado.")
+            return
 
     # Calcular días hábiles
     if df['_fecha'].notna().any():
@@ -324,6 +463,9 @@ def modulo_resoluciones(df: pd.DataFrame):
         st.markdown(f'<div class="kpi-card"><div class="kpi-val" style="font-size:1.2rem">{top}</div><div class="kpi-lab">Mayor Rendimiento</div></div>', unsafe_allow_html=True)
 
     st.dataframe(res, use_container_width=True, height=480)
+    st.download_button("⬇️ Exportar tabla (Excel)", data=df_a_excel(res, 'Resoluciones'),
+                       file_name=f"resoluciones_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                       mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     # Gráfico
     fig = px.bar(res.sort_values('Prom/Día'), x='Prom/Día', y='Funcionario',
@@ -381,6 +523,9 @@ def modulo_escritos(df: pd.DataFrame):
         st.markdown(f'<div class="kpi-card warn"><div class="kpi-val" style="font-size:1.1rem">{max_func}</div><div class="kpi-lab">Mayor Carga · {max_val} escritos</div></div>', unsafe_allow_html=True)
 
     st.dataframe(res, use_container_width=True, height=420)
+    st.download_button("⬇️ Exportar tabla (Excel)", data=df_a_excel(res, 'Escritos'),
+                       file_name=f"escritos_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                       mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     if comp_col:
         comp_totales = df[comp_col].value_counts().reset_index()
@@ -431,6 +576,7 @@ def modulo_incidentes(df: pd.DataFrame):
     # Tabla por tipo
     st.markdown("**Por tipo de incidente**")
     by_tipo = df.groupby(tipo_col)[estado_col].value_counts().unstack(fill_value=0).reset_index()
+
     by_tipo['Total'] = by_tipo.select_dtypes('number').sum(axis=1)
     if 'Concluido' in by_tipo.columns:
         by_tipo['% Resolución'] = (by_tipo.get('Concluido', 0) / by_tipo['Total'] * 100).round(1).astype(str) + '%'
@@ -439,6 +585,9 @@ def modulo_incidentes(df: pd.DataFrame):
         by_tipo['Pendientes'] = by_tipo[pend_col]
     by_tipo = by_tipo.sort_values('Total', ascending=False)
     st.dataframe(by_tipo, use_container_width=True, height=380)
+    st.download_button("⬇️ Exportar tabla (Excel)", data=df_a_excel(by_tipo, 'Incidentes'),
+                       file_name=f"incidentes_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                       mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     # Evolución mensual
     if fecha_col:
@@ -483,11 +632,23 @@ def modulo_fallos(df: pd.DataFrame):
 
     hoy = pd.Timestamp.today()
 
-    # Antigüedad
+    # Antigüedad + filtro de fecha
     if fecha_pf and fecha_pf in df.columns:
         para_fallo = para_fallo.copy()
         para_fallo['_fpf'] = pd.to_datetime(para_fallo[fecha_pf], format='%d/%m/%Y', errors='coerce')
         para_fallo['Meses Pendiente'] = ((hoy - para_fallo['_fpf']).dt.days / 30).round(0).astype('Int64')
+
+        fechas_val = para_fallo['_fpf'].dropna()
+        if not fechas_val.empty:
+            with st.expander("📅 Filtrar Por Fallo por rango de fecha"):
+                col_a, col_b = st.columns(2)
+                f_ini = col_a.date_input("Desde", value=fechas_val.dt.date.min(),
+                                         min_value=fechas_val.dt.date.min(), max_value=fechas_val.dt.date.max(), key='fallo_f_ini')
+                f_fin = col_b.date_input("Hasta", value=fechas_val.dt.date.max(),
+                                         min_value=fechas_val.dt.date.min(), max_value=fechas_val.dt.date.max(), key='fallo_f_fin')
+            mask = para_fallo['_fpf'].isna() | ((para_fallo['_fpf'].dt.date >= f_ini) & (para_fallo['_fpf'].dt.date <= f_fin))
+            para_fallo = para_fallo[mask]
+
         alerta_3m = para_fallo[para_fallo['Meses Pendiente'].notna() & (para_fallo['Meses Pendiente'] >= 3)]
         alerta_6m = para_fallo[para_fallo['Meses Pendiente'].notna() & (para_fallo['Meses Pendiente'] >= 6)]
     else:
@@ -520,7 +681,11 @@ def modulo_fallos(df: pd.DataFrame):
                 if val >= 3: return ['background-color: #FFF2CC'] * len(row)
                 return [''] * len(row)
 
-            st.dataframe(df_show.reset_index(drop=True), use_container_width=True, height=420)
+            df_show_exp = df_show.reset_index(drop=True)
+            st.dataframe(df_show_exp, use_container_width=True, height=420)
+            st.download_button("⬇️ Exportar Para Fallo (Excel)", data=df_a_excel(df_show_exp, 'Para Fallo'),
+                               file_name=f"para_fallo_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                               mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             if len(alerta_6m) > 0:
                 st.warning(f"⚠️ {len(alerta_6m)} causas llevan 6+ meses sin fallo. Revisar con urgencia.")
 
@@ -543,81 +708,641 @@ def modulo_fallos(df: pd.DataFrame):
         st.plotly_chart(fig, use_container_width=True)
 
 
+def modulo_demoras(df_esc: pd.DataFrame, df_res: pd.DataFrame):
+    st.markdown('<div class="sec-title">⏱️ Demora en Tramitación</div>', unsafe_allow_html=True)
+
+    # ── Detectar columnas ─────────────────────────────────────────────────────
+    rol_esc_col   = next((c for c in df_esc.columns if 'rol' in c.lower() and 'control' not in c.lower()), None)
+    rol_res_col   = next((c for c in df_res.columns if 'rol' in c.lower() and 'control' not in c.lower()), None)
+    fecha_esc_col = next((c for c in df_esc.columns if 'fecha' in c.lower()), None)
+    fecha_res_col = next((c for c in df_res.columns if 'firma' in c.lower()), None) or \
+                    next((c for c in df_res.columns if 'fecha' in c.lower()), None)
+    func_col      = next((c for c in df_esc.columns if 'funcionario' in c.lower()), None)
+    comp_col      = next((c for c in df_esc.columns if 'complejidad' in c.lower()), None)
+    tipo_col      = next((c for c in df_esc.columns if 'tipo' in c.lower() and 'escrito' in c.lower()), None)
+
+    faltantes = []
+    if not rol_esc_col:   faltantes.append("ROL en escritos")
+    if not rol_res_col:   faltantes.append("ROL en resoluciones")
+    if not fecha_esc_col: faltantes.append("fecha en escritos")
+    if not fecha_res_col: faltantes.append("fecha en resoluciones")
+    if faltantes:
+        st.error(f"No se encontraron columnas: {', '.join(faltantes)}.")
+        with st.expander("Columnas disponibles"):
+            st.write("**Escritos:**", df_esc.columns.tolist())
+            st.write("**Resoluciones:**", df_res.columns.tolist())
+        return
+
+    # ── Preparar datos ────────────────────────────────────────────────────────
+    esc = df_esc.copy()
+    res = df_res.copy()
+
+    esc['_rol']       = esc[rol_esc_col].astype(str).str.strip().str.upper()
+    res['_rol']       = res[rol_res_col].astype(str).str.strip().str.upper()
+    esc['_fecha_esc'] = pd.to_datetime(esc[fecha_esc_col], format='%d/%m/%Y', errors='coerce')
+    res['_fecha_res'] = pd.to_datetime(res[fecha_res_col], format='%d/%m/%Y', errors='coerce')
+    esc['_func']      = esc[func_col].apply(normalize_name) if func_col else 'Sin datos'
+
+    # ── Filtros ───────────────────────────────────────────────────────────────
+    with st.expander("🔍 Filtros", expanded=True):
+        fc1, fc2, fc3 = st.columns(3)
+
+        comp_vals = ['(Todas)'] + (sorted(esc[comp_col].dropna().unique().tolist()) if comp_col else [])
+        sel_comp  = fc1.selectbox("Complejidad", comp_vals, key='dem_comp')
+
+        excluir = {'Juez Figueroa', 'Juez Burchard', '--', 'Sin asignar', ''}
+        funcs   = ['(Todos)'] + sorted(f for f in esc['_func'].unique() if f not in excluir)
+        sel_func = fc2.selectbox("Funcionario", funcs, key='dem_func')
+
+        fmin = esc['_fecha_esc'].dropna().dt.date.min() if esc['_fecha_esc'].notna().any() else date.today()
+        fmax = esc['_fecha_esc'].dropna().dt.date.max() if esc['_fecha_esc'].notna().any() else date.today()
+        sel_fecha = fc3.date_input("Rango fechas escrito", value=(fmin, fmax),
+                                   min_value=fmin, max_value=fmax, key='dem_fecha')
+
+    mask = pd.Series(True, index=esc.index)
+    if sel_comp != '(Todas)' and comp_col:
+        mask &= esc[comp_col].astype(str).str.strip() == sel_comp
+    if sel_func != '(Todos)':
+        mask &= esc['_func'] == sel_func
+    if isinstance(sel_fecha, (tuple, list)) and len(sel_fecha) == 2:
+        f_ini, f_fin = sel_fecha
+        mask &= esc['_fecha_esc'].dt.date.between(f_ini, f_fin)
+    esc = esc[mask].copy()
+
+    if esc.empty:
+        st.warning("No hay escritos con los filtros seleccionados.")
+        return
+
+    # ── Calcular demoras ──────────────────────────────────────────────────────
+    # Para cada escrito: primera resolución en el mismo ROL con fecha >= fecha escrito
+    res_valid  = res.dropna(subset=['_fecha_res', '_rol'])
+    res_lookup = (res_valid.groupby('_rol')['_fecha_res']
+                           .apply(lambda s: sorted(s.tolist()))
+                           .to_dict())
+
+    def primera_res_despues(rol, fecha_esc):
+        if pd.isna(fecha_esc) or rol not in res_lookup:
+            return pd.NaT
+        dates = res_lookup[rol]
+        idx = bisect.bisect_left(dates, fecha_esc)
+        return dates[idx] if idx < len(dates) else pd.NaT
+
+    with st.spinner("Calculando demoras..."):
+        esc['_primera_res'] = esc.apply(
+            lambda r: primera_res_despues(r['_rol'], r['_fecha_esc']), axis=1
+        )
+    esc['_demora']      = (esc['_primera_res'] - esc['_fecha_esc']).dt.days
+    hoy                 = pd.Timestamp.today().normalize()
+    esc['_demora_acum'] = (hoy - esc['_fecha_esc']).dt.days
+
+    resueltos  = esc.dropna(subset=['_demora'])
+    pendientes = esc[esc['_primera_res'].isna()]
+
+    if resueltos.empty:
+        st.warning("No se encontraron resoluciones para los escritos del período. "
+                   "Verifica que ambos archivos correspondan al mismo período y tribunal.")
+        return
+
+    # ── KPIs globales con semáforo institucional ──────────────────────────────
+    prom_d = resueltos['_demora'].mean()
+    med_d  = resueltos['_demora'].median()
+    p_le7  = (resueltos['_demora'] <= 7).mean() * 100
+    p_le2  = (resueltos['_demora'] <= 2).mean() * 100
+    n_pend = len(pendientes)
+    oldest = int(pendientes['_demora_acum'].max()) if not pendientes.empty else 0
+
+    def _sem(v, verde, amarillo, inv=False):
+        """Retorna (icono, clase_css). inv=True cuando menor es peor."""
+        if not inv:
+            if v <= verde:   return '🟢', 'ok'
+            if v <= amarillo: return '🟡', 'warn'
+            return '🔴', 'alerta'
+        else:
+            if v >= verde:   return '🟢', 'ok'
+            if v >= amarillo: return '🟡', 'warn'
+            return '🔴', 'alerta'
+
+    ic1, ic2, ic3, ic4 = st.columns(4)
+    icon, cls = _sem(prom_d, 5, 8)
+    ic1.markdown(f'<div class="kpi-card {cls}"><div class="kpi-val">{icon} {prom_d:.1f}d</div>'
+                 f'<div class="kpi-lab">Promedio demora</div><div class="kpi-meta">Meta ≤ 5 días</div></div>',
+                 unsafe_allow_html=True)
+    icon, cls = _sem(med_d, 4, 7)
+    ic2.markdown(f'<div class="kpi-card {cls}"><div class="kpi-val">{icon} {med_d:.0f}d</div>'
+                 f'<div class="kpi-lab">Mediana demora</div><div class="kpi-meta">Meta ≤ 4 días</div></div>',
+                 unsafe_allow_html=True)
+    icon, cls = _sem(p_le7, 80, 65, inv=True)
+    ic3.markdown(f'<div class="kpi-card {cls}"><div class="kpi-val">{icon} {p_le7:.0f}%</div>'
+                 f'<div class="kpi-lab">Resueltos ≤ 7 días</div><div class="kpi-meta">Meta ≥ 80%</div></div>',
+                 unsafe_allow_html=True)
+    ic4.markdown(f'<div class="kpi-card"><div class="kpi-val">{p_le2:.0f}%</div>'
+                 f'<div class="kpi-lab">Resueltos ≤ 2 días</div><div class="kpi-meta">Referencia</div></div>',
+                 unsafe_allow_html=True)
+
+    ic1b, ic2b, ic3b, _ = st.columns(4)
+    ic1b.markdown(f'<div class="kpi-card ok"><div class="kpi-val">{len(resueltos):,}</div>'
+                  f'<div class="kpi-lab">Escritos resueltos</div></div>', unsafe_allow_html=True)
+    icon, cls = _sem(oldest, 7, 14)
+    ic2b.markdown(f'<div class="kpi-card {cls}"><div class="kpi-val">{icon} {oldest}d</div>'
+                  f'<div class="kpi-lab">Pendiente más antiguo</div><div class="kpi-meta">Meta ≤ 7 días</div></div>',
+                  unsafe_allow_html=True)
+    cls_p = 'alerta' if n_pend > 0 else 'ok'
+    ic3b.markdown(f'<div class="kpi-card {cls_p}"><div class="kpi-val">{n_pend:,}</div>'
+                  f'<div class="kpi-lab">Sin resolución aún</div></div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # ── Por funcionario ───────────────────────────────────────────────────────
+    st.markdown("#### Cumplimiento por Funcionario")
+    res_func = resueltos[~resueltos['_func'].isin(excluir)]
+
+    if not res_func.empty:
+        grp   = res_func.groupby('_func')['_demora']
+        agg   = grp.agg(Total='count', Promedio='mean', Mediana='median').reset_index()
+        p7_s  = grp.apply(lambda x: (x <= 7).mean() * 100).reset_index(name='% ≤7d')
+        p2_s  = grp.apply(lambda x: (x <= 2).mean() * 100).reset_index(name='% ≤2d')
+        agg   = agg.merge(p7_s, on='_func').merge(p2_s, on='_func')
+
+        pend_cnt = (pendientes[~pendientes['_func'].isin(excluir)]
+                    .groupby('_func').size().reset_index(name='Pendientes'))
+        agg = agg.merge(pend_cnt, on='_func', how='left').fillna({'Pendientes': 0})
+        agg['Pendientes'] = agg['Pendientes'].astype(int)
+
+        def sem_row(row):
+            p, m, p7 = row['Promedio'], row['Mediana'], row['% ≤7d']
+            if p <= 5 and m <= 4 and p7 >= 80: return '🟢 Verde'
+            if p <= 8 and m <= 7 and p7 >= 65: return '🟡 Amarillo'
+            return '🔴 Rojo'
+
+        agg['Estado']   = agg.apply(sem_row, axis=1)
+        agg['Promedio'] = agg['Promedio'].round(1)
+        agg['Mediana']  = agg['Mediana'].round(0).astype(int)
+        agg['% ≤7d']    = agg['% ≤7d'].round(0).astype(int).astype(str) + '%'
+        agg['% ≤2d']    = agg['% ≤2d'].round(0).astype(int).astype(str) + '%'
+        agg = agg.sort_values('Promedio').reset_index(drop=True)
+        agg.index += 1
+        agg = agg.rename(columns={'_func': 'Funcionario'})
+
+        st.dataframe(
+            agg[['Funcionario', 'Total', 'Promedio', 'Mediana', '% ≤7d', '% ≤2d', 'Pendientes', 'Estado']],
+            use_container_width=True, height=360
+        )
+        st.download_button(
+            "⬇️ Exportar tabla (Excel)",
+            data=df_a_excel(agg, 'Demoras'),
+            file_name=f"demoras_{datetime.now().strftime('%Y%m%d')}.xlsx",
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        # Gráfico promedio por funcionario
+        fig = px.bar(
+            agg.sort_values('Promedio', ascending=True),
+            x='Promedio', y='Funcionario', orientation='h',
+            color='Promedio',
+            color_continuous_scale=['#375623', '#BF8F00', '#C00000'],
+            range_color=[0, max(float(agg['Promedio'].max()) if not agg.empty else 10, 10)],
+            text='Promedio',
+        )
+        fig.add_vline(x=5, line_dash='dash', line_color='#1F3864',
+                      annotation_text='Meta 5d', annotation_position='top right')
+        fig.update_layout(height=380, plot_bgcolor='white', paper_bgcolor='white',
+                          margin=dict(l=10, r=20, t=20, b=10),
+                          coloraxis_showscale=False,
+                          xaxis_title='Promedio días', yaxis_title='')
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("---")
+
+    # ── Distribución + ranking de tipos lentos ────────────────────────────────
+    st.markdown("#### Distribución y tipos más lentos")
+    col_hist, col_rank = st.columns(2)
+
+    with col_hist:
+        fig_h = px.histogram(
+            resueltos, x='_demora', nbins=30,
+            color_discrete_sequence=['#2E75B6'],
+            labels={'_demora': 'Días de demora'},
+            title='Distribución de tiempos de respuesta',
+        )
+        fig_h.add_vline(x=5, line_dash='dash', line_color='#375623',
+                        annotation_text='Meta 5d', annotation_position='top right')
+        fig_h.add_vline(x=7, line_dash='dot', line_color='#BF8F00',
+                        annotation_text='Límite 7d', annotation_position='top left')
+        fig_h.update_layout(height=340, plot_bgcolor='white', paper_bgcolor='white',
+                             margin=dict(l=10, r=10, t=40, b=10),
+                             yaxis_title='Cantidad escritos')
+        st.plotly_chart(fig_h, use_container_width=True)
+
+    with col_rank:
+        if tipo_col and tipo_col in resueltos.columns:
+            tipo_stats = (resueltos.groupby(tipo_col)['_demora']
+                          .agg(Promedio='mean', Total='count')
+                          .reset_index())
+            tipo_stats = (tipo_stats[tipo_stats['Total'] >= 5]
+                          .sort_values('Promedio', ascending=False)
+                          .head(15))
+            tipo_stats['Promedio'] = tipo_stats['Promedio'].round(1)
+            tipo_stats.index = range(1, len(tipo_stats) + 1)
+            tipo_stats.columns = ['Tipo Escrito', 'Prom. días', 'Total']
+            st.markdown("**Top 15 tipos más lentos** (≥ 5 escritos)")
+            st.dataframe(tipo_stats, use_container_width=True, height=340)
+        else:
+            st.info("No se detectó columna de tipo de escrito.")
+
+    # ── Pendientes más antiguos ────────────────────────────────────────────────
+    if not pendientes.empty:
+        st.markdown("---")
+        st.markdown(f"#### ⚠️ Escritos sin resolución — {n_pend:,} pendientes")
+        pend_show = pendientes[~pendientes['_func'].isin(excluir)].copy()
+        pend_show = pend_show.sort_values('_demora_acum', ascending=False)
+        cols_pend = [c for c in ['_func', '_rol', tipo_col, fecha_esc_col, '_demora_acum']
+                     if c and c in pend_show.columns]
+        rename_map = {'_func': 'Funcionario', '_rol': 'ROL',
+                      '_demora_acum': 'Días acumulados'}
+        if tipo_col:
+            rename_map[tipo_col] = 'Tipo Escrito'
+        if fecha_esc_col:
+            rename_map[fecha_esc_col] = 'Fecha Escrito'
+        pend_show = pend_show[cols_pend].rename(columns=rename_map).head(50)
+        pend_show.index = range(1, len(pend_show) + 1)
+        st.dataframe(pend_show, use_container_width=True, height=340)
+
+
 def modulo_asignacion():
     st.markdown('<div class="sec-title">📌 Generador de Asignaciones</div>', unsafe_allow_html=True)
-    st.info("Sube el archivo de incidentes para generar asignaciones por funcionario.")
 
-    funcionarios = [
+    TRAMITADORES = [
         'Jorge', 'Robinson', 'Camila Rivera', 'Cristián Rivas',
         'Francisca Cristiny', 'Nicolás Lorenzoni', 'Max Ñaguil',
         'Camilo Ross', 'Marcos Ríos'
     ]
 
+    datos  = st.session_state.get('datos', {})
+    df_inc = datos.get('incidentes')
+
+    tipo_col = estado_col = rol_col = proc_col = mat_col = None
+    if df_inc is not None:
+        tipo_col   = next((c for c in df_inc.columns if 'cuaderno' in c.lower() and 'tipo' in c.lower()), None)
+        estado_col = next((c for c in df_inc.columns if 'estado' in c.lower()), None)
+        rol_col    = next((c for c in df_inc.columns if c.strip().upper() == 'ROL'), None)
+        proc_col   = next((c for c in df_inc.columns if 'procedimiento' in c.lower()), None)
+        mat_col    = next((c for c in df_inc.columns if 'materia' in c.lower()), None)
+
+    # ── Panel de configuración ─────────────────────────────────────────────
     col1, col2 = st.columns([1, 2])
     with col1:
         st.markdown("**Configurar asignación**")
-        n_por_func = st.number_input("Causas por funcionario", min_value=1, max_value=10, value=4)
-        incluir_dilatorias = st.checkbox("Excepciones Dilatorias", value=True)
-        incluir_nulidad    = st.checkbox("Nulidad de lo Obrado", value=True)
+        n_por_func          = st.number_input("Causas por funcionario", min_value=1, max_value=15, value=4)
+        incluir_dilatorias  = st.checkbox("Excepciones Dilatorias", value=True)
+        incluir_nulidad     = st.checkbox("Nulidad de lo Obrado", value=True)
         incluir_acumulacion = st.checkbox("Incidente Acumulación", value=True)
-        urgente_rol = st.text_input("ROL urgente (opcional)", placeholder="C-15500-2025")
-        urgente_func = st.selectbox("Asignar urgente a", [''] + funcionarios) if urgente_rol else ''
+        urgente_rol  = st.text_input("ROL urgente (opcional)", placeholder="C-15500-2025")
+        urgente_func = st.selectbox("Asignar urgente a", [''] + TRAMITADORES) if urgente_rol else ''
 
+    # ── Panel de estado de pendientes ─────────────────────────────────────
     with col2:
-        st.markdown("**Estado actual de pendientes**")
-        st.markdown("""
-        | Tipo | Pendientes | % Resolución |
-        |------|-----------|-------------|
-        | 🔵 Excepciones Dilatorias | 54 | 54.6% |
-        | 🟡 Nulidad de lo Obrado | 48 | 67.3% |
-        | 🔴 Incidente Acumulación | 17 | **0%** |
-        | Desistimiento | 9 | 90.3% |
-        """)
-        if urgente_rol:
-            st.markdown(f'<div class="urgente">⚠ URGENTE: {urgente_rol} → {urgente_func}</div>', unsafe_allow_html=True)
+        if df_inc is not None and tipo_col and estado_col:
+            st.markdown("**Estado real de pendientes (datos SITCI)**")
+            pendientes_df = df_inc[df_inc[estado_col].str.strip().isin(['Tramitación', 'Suspendido'])]
+            total_tipo    = df_inc[tipo_col].value_counts()
+            resumen = []
+            for tipo, pend_n in pendientes_df[tipo_col].value_counts().items():
+                total_n = total_tipo.get(tipo, pend_n)
+                tasa    = round((total_n - pend_n) / total_n * 100, 1) if total_n else 0
+                resumen.append({'Tipo de incidente': tipo, 'Pendientes': int(pend_n), '% Resolución': f'{tasa}%'})
+            resumen_df = pd.DataFrame(resumen).sort_values('Pendientes', ascending=False)
+            st.dataframe(resumen_df, use_container_width=True, height=260)
+        else:
+            st.markdown("**Estado referencial (sin datos cargados)**")
+            st.markdown("""
+| Tipo | Pendientes | % Resolución |
+|------|-----------|-------------|
+| Excepciones Dilatorias | 54 | 54.6% |
+| Nulidad de lo Obrado | 48 | 67.3% |
+| Incidente Acumulación | 17 | 0% |
+| Desistimiento | 9 | 90.3% |
+""")
+            if urgente_rol and urgente_func:
+                st.markdown(f'<div class="urgente">⚠ URGENTE: {urgente_rol} → {urgente_func}</div>', unsafe_allow_html=True)
+            st.info("📁 Sube el archivo de **Incidentes** en Inicio para generar asignaciones con ROLes reales.")
 
-    st.caption("La asignación detallada con roles reales requiere subir el archivo de incidentes actualizado.")
+    # ── Generación de asignaciones ─────────────────────────────────────────
+    if df_inc is not None and tipo_col and estado_col:
+        st.markdown("---")
+        if st.button("🔄 Generar asignaciones", type="primary"):
+
+            pool = df_inc[df_inc[estado_col].str.strip().isin(['Tramitación', 'Suspendido'])].copy()
+
+            # Filtrar por tipos seleccionados
+            filtros = []
+            if incluir_dilatorias:  filtros.append('Dilatoria')
+            if incluir_nulidad:     filtros.append('Nulidad')
+            if incluir_acumulacion: filtros.append('Acumulaci')
+            if filtros:
+                mask = pd.Series(False, index=pool.index)
+                for t in filtros:
+                    mask |= pool[tipo_col].str.contains(t, case=False, na=False)
+                pool = pool[mask]
+
+            if pool.empty:
+                st.warning("No hay causas pendientes que coincidan con los filtros seleccionados.")
+                return
+
+            # Separar causa urgente
+            urgente_rows = pd.DataFrame()
+            if urgente_rol and rol_col:
+                mask_urg    = pool[rol_col].astype(str).str.contains(urgente_rol.strip(), case=False, na=False)
+                urgente_rows = pool[mask_urg]
+                pool         = pool[~mask_urg]
+
+            # Barajar para distribución equitativa
+            pool = pool.sample(frac=1, random_state=42).reset_index(drop=True)
+
+            # Distribución round-robin con límite n_por_func
+            cols_show  = [c for c in [rol_col, tipo_col, proc_col, mat_col] if c]
+            asignaciones = []
+
+            if not urgente_rows.empty and urgente_func:
+                for _, row in urgente_rows.iterrows():
+                    entry = {c: row.get(c, '') for c in cols_show}
+                    entry.update({'Funcionario': urgente_func, 'Urgente': '⚠️ SÍ'})
+                    asignaciones.append(entry)
+
+            func_count = {f: 0 for f in TRAMITADORES}
+            for _, row in pool.iterrows():
+                elegibles = [f for f in TRAMITADORES if func_count[f] < n_por_func]
+                if not elegibles:
+                    break
+                func = min(elegibles, key=lambda f: func_count[f])
+                func_count[func] += 1
+                entry = {c: row.get(c, '') for c in cols_show}
+                entry.update({'Funcionario': func, 'Urgente': ''})
+                asignaciones.append(entry)
+
+            result_df = pd.DataFrame(asignaciones)
+            col_order = ['Funcionario', 'Urgente'] + [c for c in cols_show if c in result_df.columns]
+            result_df = result_df[[c for c in col_order if c in result_df.columns]]
+
+            n_func_activos = sum(1 for v in func_count.values() if v > 0)
+            st.success(f"✅ {len(result_df)} causas asignadas a {n_func_activos} funcionarios")
+            st.dataframe(result_df, use_container_width=True, height=420)
+
+            # Resumen por funcionario
+            st.markdown("**Resumen por funcionario**")
+            resumen_func = result_df.groupby('Funcionario').size().reset_index(name='Causas asignadas').sort_values('Causas asignadas', ascending=False)
+            st.dataframe(resumen_func, use_container_width=True)
+
+            # Descargar CSV
+            csv = result_df.to_csv(index=False).encode('utf-8-sig')
+            st.download_button(
+                "⬇️ Descargar asignaciones (CSV)",
+                data=csv,
+                file_name=f"asignaciones_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime='text/csv',
+            )
 
 
 def modulo_dashboard():
     st.markdown('<div class="sec-title">📊 Dashboard KPIs Institucionales</div>', unsafe_allow_html=True)
 
-    st.markdown("""
-    <div style="background:white;border-radius:12px;padding:1.2rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:1rem;">
-    <p style="margin:0;color:#666;font-size:0.85rem;">Sube los archivos SITCI del período para calcular los KPIs automáticamente.
-    El sistema detecta el tipo de archivo y actualiza cada módulo de forma independiente.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    datos = st.session_state.get('datos', {})
 
-    kpis_demo = {
-        'Clearance Rate':         ('≥ 100%', '—', '—', False),
-        'Plazo Tramitación':      ('≤ 180 d', '—', '—', False),
-        'Cumplimiento Plazos':    ('≥ 90%', '—', '—', False),
-        'Reducción Inventario':   ('−5% trim.', '—', '—', False),
-        'Meta Baja / día':        ('60 res.', '—', '—', False),
-        'Meta Ejecutiva / día':   ('45 res.', '—', '—', False),
-        'Meta Fondo / día':       ('25 res.', '—', '—', False),
-        'Fallos alerta > 3m':     ('0', '—', '—', False),
-    }
+    # ── Calcular KPIs desde datos disponibles ────────────────────────────────
+    kpis = {}
 
-    cols = st.columns(4)
-    for i, (kpi, (meta, val, sem, ok)) in enumerate(kpis_demo.items()):
-        with cols[i % 4]:
-            st.markdown(f"""
-            <div class="kpi-card">
-            <div class="kpi-val" style="font-size:1.4rem">{val}</div>
-            <div class="kpi-lab">{kpi}</div>
-            <div class="kpi-meta">Meta: {meta}</div>
-            </div>
-            """, unsafe_allow_html=True)
+    if 'resoluciones' in datos:
+        df_r = datos['resoluciones'].copy()
+        func_col  = next((c for c in df_r.columns if 'funcionario' in c.lower()), None)
+        fecha_col = next((c for c in df_r.columns if 'fecha' in c.lower()), None)
+        if func_col:
+            df_r['_func'] = df_r[func_col].apply(normalize_name)
+            df_r = df_r[~df_r['_func'].isin(['Juez Figueroa', '--', 'Sin asignar', ''])]
+            if fecha_col:
+                df_r['_fecha'] = pd.to_datetime(df_r[fecha_col], dayfirst=True, errors='coerce')
+                dias = df_r.dropna(subset=['_fecha'])['_fecha'].dt.date.nunique() or 21
+            else:
+                dias = 21
+            total_res = len(df_r)
+            kpis['resoluciones'] = {'total': total_res, 'prom_dia': round(total_res / dias, 1), 'dias': dias}
 
-    st.markdown("---")
-    st.markdown("### 📁 Historial de archivos procesados")
-    if 'historial' in st.session_state and st.session_state.historial:
-        hist_df = pd.DataFrame(st.session_state.historial)
-        st.dataframe(hist_df, use_container_width=True)
+    if 'escritos' in datos:
+        kpis['escritos'] = {'total': len(datos['escritos'])}
+
+    if 'incidentes' in datos:
+        df_inc    = datos['incidentes']
+        estado_col = next((c for c in df_inc.columns if 'estado' in c.lower()), None)
+        if estado_col:
+            total_inc  = len(df_inc)
+            concluidos = df_inc[df_inc[estado_col].str.strip() == 'Concluido'].shape[0]
+            kpis['incidentes'] = {
+                'total': total_inc,
+                'concluidos': concluidos,
+                'tasa': round(concluidos / total_inc * 100, 1) if total_inc else 0,
+            }
+
+    if 'fallos' in datos:
+        df_fal  = datos['fallos']
+        tipo_col = next((c for c in df_fal.columns if 'tipo' in c.lower() and 'causa' in c.lower()), None)
+        fecha_pf = next((c for c in df_fal.columns if 'para fallo' in c.lower()), None)
+        if tipo_col:
+            para_fallo = df_fal[df_fal[tipo_col].str.strip() == 'Para Fallo']
+            falladas   = df_fal[df_fal[tipo_col].str.strip() == 'Falladas']
+        else:
+            para_fallo, falladas = df_fal, pd.DataFrame()
+        hoy = pd.Timestamp.today()
+        alerta_3m = alerta_6m = 0
+        if fecha_pf and fecha_pf in df_fal.columns:
+            pf = para_fallo.copy()
+            pf['_fpf'] = pd.to_datetime(pf[fecha_pf], format='%d/%m/%Y', errors='coerce')
+            meses = (hoy - pf['_fpf']).dt.days / 30
+            alerta_3m = int((meses >= 3).sum())
+            alerta_6m = int((meses >= 6).sum())
+        total_f = len(para_fallo) + len(falladas)
+        kpis['fallos'] = {
+            'para_fallo': len(para_fallo),
+            'falladas':   len(falladas),
+            'clearance':  round(len(falladas) / total_f * 100, 1) if total_f else None,
+            'alerta_3m':  alerta_3m,
+            'alerta_6m':  alerta_6m,
+        }
+
+    # Clearance Rate: resoluciones vs escritos (proxy más representativo)
+    clearance_rate = None
+    if 'resoluciones' in kpis and 'escritos' in kpis and kpis['escritos']['total'] > 0:
+        clearance_rate = round(kpis['resoluciones']['total'] / kpis['escritos']['total'] * 100, 1)
+    elif 'fallos' in kpis and kpis['fallos']['clearance'] is not None:
+        clearance_rate = kpis['fallos']['clearance']
+
+    # ── Helper: renderizar tarjeta KPI ────────────────────────────────────────
+    def kpi_card(val, label, meta_text, css='kpi-card'):
+        return (f'<div class="{css}" style="min-height:90px">'
+                f'<div class="kpi-val" style="font-size:1.4rem">{val}</div>'
+                f'<div class="kpi-lab">{label}</div>'
+                f'<div class="kpi-meta">Meta: {meta_text}</div></div>')
+
+    # ── Fila 1: KPIs principales ──────────────────────────────────────────────
+    st.markdown("#### Indicadores principales")
+    c1, c2, c3, c4 = st.columns(4)
+
+    # Clearance Rate
+    if clearance_rate is not None:
+        icon, cls = semaforo(clearance_rate, 100, 90)
+        with c1: st.markdown(kpi_card(f"{icon} {clearance_rate}%", 'Clearance Rate', '≥ 100%', f'kpi-card {cls}'), unsafe_allow_html=True)
     else:
-        st.info("Ningún archivo procesado aún en esta sesión.")
+        with c1: st.markdown(kpi_card('—', 'Clearance Rate', '≥ 100%'), unsafe_allow_html=True)
+
+    # Resoluciones / día
+    if 'resoluciones' in kpis:
+        prom = kpis['resoluciones']['prom_dia']
+        icon, cls = semaforo(prom, 60, 51)
+        with c2: st.markdown(kpi_card(f"{icon} {prom}", 'Resoluciones / día', '≥ 60', f'kpi-card {cls}'), unsafe_allow_html=True)
+    else:
+        with c2: st.markdown(kpi_card('—', 'Resoluciones / día', '≥ 60'), unsafe_allow_html=True)
+
+    # Resolución Incidentes
+    if 'incidentes' in kpis:
+        tasa = kpis['incidentes']['tasa']
+        icon, cls = semaforo(tasa, 65, 50)
+        with c3: st.markdown(kpi_card(f"{icon} {tasa}%", 'Resolución Incidentes', '≥ 65%', f'kpi-card {cls}'), unsafe_allow_html=True)
+    else:
+        with c3: st.markdown(kpi_card('—', 'Resolución Incidentes', '≥ 65%'), unsafe_allow_html=True)
+
+    # Fallos > 3 meses
+    if 'fallos' in kpis:
+        n = kpis['fallos']['alerta_3m']
+        icon = '🔴' if n > 0 else '🟢'
+        css  = 'kpi-card alerta' if n > 0 else 'kpi-card ok'
+        with c4: st.markdown(kpi_card(f"{icon} {n}", 'Fallos > 3 meses', '0', css), unsafe_allow_html=True)
+    else:
+        with c4: st.markdown(kpi_card('—', 'Fallos > 3 meses', '0'), unsafe_allow_html=True)
+
+    # ── Fila 2: KPIs secundarios ──────────────────────────────────────────────
+    c1, c2, c3, c4 = st.columns(4)
+
+    if 'resoluciones' in kpis:
+        with c1: st.markdown(kpi_card(f"{kpis['resoluciones']['total']:,}", 'Total Resoluciones', '—', 'kpi-card ok'), unsafe_allow_html=True)
+    else:
+        with c1: st.markdown(kpi_card('—', 'Total Resoluciones', '—'), unsafe_allow_html=True)
+
+    if 'escritos' in kpis:
+        with c2: st.markdown(kpi_card(f"{kpis['escritos']['total']:,}", 'Total Escritos', '—'), unsafe_allow_html=True)
+    else:
+        with c2: st.markdown(kpi_card('—', 'Total Escritos', '—'), unsafe_allow_html=True)
+
+    if 'fallos' in kpis:
+        with c3: st.markdown(kpi_card(str(kpis['fallos']['para_fallo']), 'Causas Para Fallo', 'Mínimo', 'kpi-card warn'), unsafe_allow_html=True)
+    else:
+        with c3: st.markdown(kpi_card('—', 'Causas Para Fallo', 'Mínimo'), unsafe_allow_html=True)
+
+    if 'fallos' in kpis:
+        n = kpis['fallos']['alerta_6m']
+        icon = '🔴' if n > 0 else '🟢'
+        css  = 'kpi-card alerta' if n > 0 else 'kpi-card ok'
+        with c4: st.markdown(kpi_card(f"{icon} {n}", 'Fallos > 6 meses', '0', css), unsafe_allow_html=True)
+    else:
+        with c4: st.markdown(kpi_card('—', 'Fallos > 6 meses', '0'), unsafe_allow_html=True)
+
+    # ── Estado de módulos ─────────────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("#### Estado de datos cargados")
+    modulos = [
+        ('📊 Resoluciones', 'resoluciones'),
+        ('📨 Escritos',     'escritos'),
+        ('⚖️ Incidentes',   'incidentes'),
+        ('📋 Fallos',       'fallos'),
+    ]
+    cols_m = st.columns(4)
+    for idx, (nombre, key) in enumerate(modulos):
+        with cols_m[idx]:
+            if key in kpis:
+                st.success(f"{nombre}  \n✅ Cargado")
+            else:
+                st.warning(f"{nombre}  \n⏳ Sin datos")
+
+    if not kpis:
+        st.info("👆 Sube archivos SITCI en **Inicio / Upload** para calcular los KPIs automáticamente.")
+
+    # ── Gráfico comparativo KPIs vs Metas ─────────────────────────────────────
+    chart_data = []
+    if clearance_rate is not None:
+        chart_data.append({'KPI': 'Clearance Rate', 'Valor': clearance_rate, 'Meta': 100})
+    if 'resoluciones' in kpis:
+        chart_data.append({'KPI': 'Resoluciones/día', 'Valor': kpis['resoluciones']['prom_dia'], 'Meta': 60})
+    if 'incidentes' in kpis:
+        chart_data.append({'KPI': 'Resolución Incidentes', 'Valor': kpis['incidentes']['tasa'], 'Meta': 65})
+
+    if chart_data:
+        st.markdown("#### Cumplimiento vs Metas")
+        chart_df = pd.DataFrame(chart_data)
+        chart_df['% Cumplimiento'] = (chart_df['Valor'] / chart_df['Meta'] * 100).round(1)
+        colors = ['#375623' if v >= 100 else '#BF8F00' if v >= 85 else '#C00000'
+                  for v in chart_df['% Cumplimiento']]
+        fig = go.Figure(go.Bar(
+            x=chart_df['KPI'],
+            y=chart_df['% Cumplimiento'],
+            marker_color=colors,
+            text=[f"{v}%" for v in chart_df['% Cumplimiento']],
+            textposition='outside',
+        ))
+        fig.add_hline(y=100, line_dash='dash', line_color='#1F3864',
+                      annotation_text='Meta 100%', annotation_position='right')
+        fig.update_layout(height=320, plot_bgcolor='white', paper_bgcolor='white',
+                          yaxis_title='% cumplimiento vs meta',
+                          margin=dict(l=10, r=10, t=20, b=20),
+                          showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+    # ── Guardar snapshot de KPIs actuales en DB ────────────────────────────────
+    if kpis:
+        snapshot = {}
+        if clearance_rate is not None:
+            snapshot['Clearance Rate (%)'] = clearance_rate
+        if 'resoluciones' in kpis:
+            snapshot['Resoluciones/día'] = kpis['resoluciones']['prom_dia']
+            snapshot['Total Resoluciones'] = kpis['resoluciones']['total']
+        if 'incidentes' in kpis:
+            snapshot['Resolución Incidentes (%)'] = kpis['incidentes']['tasa']
+        if 'fallos' in kpis:
+            snapshot['Fallos > 3 meses'] = kpis['fallos']['alerta_3m']
+            snapshot['Fallos > 6 meses'] = kpis['fallos']['alerta_6m']
+        db_guardar_kpis(snapshot, st.session_state.get('usuario', ''))
+
+    # ── Tendencia histórica de KPIs ────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("#### 📈 Tendencia histórica de KPIs")
+    hist_kpi = db_cargar_kpi_historico()
+    if not hist_kpi.empty:
+        kpi_opciones = hist_kpi['kpi_nombre'].unique().tolist()
+        kpi_sel = st.multiselect(
+            "Selecciona KPIs a graficar",
+            options=kpi_opciones,
+            default=[k for k in ['Clearance Rate (%)', 'Resoluciones/día'] if k in kpi_opciones],
+        )
+        if kpi_sel:
+            df_plot = hist_kpi[hist_kpi['kpi_nombre'].isin(kpi_sel)].copy()
+            df_plot['fecha'] = pd.to_datetime(df_plot['fecha'])
+            fig_trend = px.line(
+                df_plot, x='fecha', y='kpi_valor', color='kpi_nombre',
+                markers=True,
+                labels={'fecha': 'Fecha', 'kpi_valor': 'Valor', 'kpi_nombre': 'KPI'},
+                color_discrete_sequence=['#1F3864', '#2E75B6', '#375623', '#BF8F00', '#C00000'],
+            )
+            fig_trend.update_layout(
+                height=320, plot_bgcolor='white', paper_bgcolor='white',
+                margin=dict(l=10, r=10, t=20, b=20), legend_title='',
+            )
+            st.plotly_chart(fig_trend, use_container_width=True)
+    else:
+        st.info("El gráfico de tendencia se irá construyendo cada vez que visites el Dashboard con datos cargados.")
+
+    # ── Historial de archivos desde DB ────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("#### 📁 Historial de archivos procesados")
+    hist_df = db_cargar_historial()
+    if not hist_df.empty:
+        st.dataframe(hist_df, use_container_width=True, height=280)
+    else:
+        st.info("Ningún archivo procesado aún.")
 
 
 # ─── SIDEBAR ─────────────────────────────────────────────────────────────────
@@ -641,6 +1366,7 @@ with st.sidebar:
         "🏠  Inicio / Upload",
         "📊  Resoluciones",
         "📨  Escritos",
+        "⏱️  Demoras",
         "⚖️   Incidentes",
         "📋  Fallos",
         "📌  Asignaciones",
@@ -668,8 +1394,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Inicializar session state
-if 'historial' not in st.session_state:
-    st.session_state.historial = []
 if 'datos' not in st.session_state:
     st.session_state.datos = {}
 
@@ -690,9 +1414,17 @@ if modulo.startswith("🏠"):
             df, tipo = parse_xls(file_bytes, uploaded.name)
 
         if df is None:
-            st.error(f"Error al leer el archivo: {tipo}")
+            st.error(f"❌ {tipo}")
+            st.info("**Posibles causas:** el archivo está protegido, corrupto, o no es un reporte SITCI. Intenta exportarlo nuevamente desde el SITCI en formato XLS.")
         elif tipo == 'desconocido':
-            st.warning("No se pudo detectar el tipo de archivo. Verifica que sea un reporte SITCI.")
+            st.warning("⚠️ No se pudo identificar el tipo de archivo automáticamente.")
+            st.markdown(f"**Columnas detectadas:** `{', '.join(df.columns.tolist()[:10])}`")
+            st.markdown("""**El sistema espera al menos una de estas columnas para identificar el tipo:**
+- **Resoluciones:** `Funcionario de Bloqueo` o `Nomenclatura`
+- **Escritos:** `Tipo Escrito` + `Complejidad`
+- **Incidentes:** `Tipo Cuaderno` + `Estado Cuaderno`
+- **Fallos:** `Fecha Para Fallo` o `Estado Boletin`
+""")
             st.dataframe(df.head(5))
         else:
             tipo_label = {
@@ -704,15 +1436,11 @@ if modulo.startswith("🏠"):
 
             st.success(f"✅ Archivo detectado: **{tipo_label}**  ·  {len(df):,} registros")
             st.session_state.datos[tipo] = df
-            st.session_state.historial.append({
-                'Archivo': uploaded.name,
-                'Tipo': tipo_label,
-                'Registros': len(df),
-                'Procesado': datetime.now().strftime('%d/%m/%Y %H:%M'),
-            })
+            usuario_actual = st.session_state.get('usuario', '')
+            db_guardar_historial(uploaded.name, tipo_label, len(df), usuario_actual)
             st.info(f"👉 Ve al módulo **{tipo_label}** en el menú lateral para ver el análisis completo.")
 
-    # Estado de datos cargados
+    # Estado de datos cargados en esta sesión
     if st.session_state.datos:
         st.markdown("### Datos disponibles en esta sesión")
         for t, d in st.session_state.datos.items():
@@ -747,6 +1475,18 @@ elif modulo.startswith("📨"):
     else:
         st.info("📁 Sube el archivo de **Escritos** en el módulo Inicio para ver el análisis.")
         st.markdown("*Ejemplo: INGRESO_ESCRITO_ENERO.xls*")
+
+elif modulo.startswith("⏱️"):
+    tiene_esc = 'escritos'     in st.session_state.datos
+    tiene_res = 'resoluciones' in st.session_state.datos
+    if tiene_esc and tiene_res:
+        modulo_demoras(st.session_state.datos['escritos'], st.session_state.datos['resoluciones'])
+    else:
+        faltantes = []
+        if not tiene_esc: faltantes.append("**Escritos**")
+        if not tiene_res: faltantes.append("**Resoluciones**")
+        st.info(f"📁 Este módulo requiere cargar: {' y '.join(faltantes)}. Ve a **Inicio / Upload**.")
+        st.markdown("*Sube ambos archivos SITCI (escritos y resoluciones) del mismo período.*")
 
 elif modulo.startswith("⚖️"):
     if 'incidentes' in st.session_state.datos:
