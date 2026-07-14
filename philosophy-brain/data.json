@@ -867,6 +867,48 @@
       "type": "filosofo",
       "era": "Oriental",
       "desc": "Continuador de Confucio; sostuvo que la naturaleza humana es originalmente buena, como brotes que hay que cultivar."
+    },
+    {
+      "id": "eckhart",
+      "name": "Meister Eckhart",
+      "type": "filosofo",
+      "era": "Medieval",
+      "desc": "Místico renano: el desprendimiento (Gelassenheit) de las cosas finitas abre el camino hacia Dios; no huir del mundo, sino habitarlo sin poseerlo."
+    },
+    {
+      "id": "weil",
+      "name": "Simone Weil",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Filósofa y mística francesa: la atención como presencia abierta ante lo real, opuesta a la fuerza que convierte a los seres humanos en cosas."
+    },
+    {
+      "id": "gelassenheit",
+      "name": "Gelassenheit",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Serenidad o 'dejar ser': actitud de no poseer ni controlar las cosas. Nace en Eckhart como desprendimiento místico y Heidegger la vuelve resistencia al pensamiento calculador de la técnica."
+    },
+    {
+      "id": "das_man",
+      "name": "El \"uno\" (das Man)",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "En Ser y Tiempo, la existencia impersonal y caída (Verfallenheit): 'uno' trabaja, 'uno' compite, sin que nadie decida; la vida vivida desde afuera, sin habitarse."
+    },
+    {
+      "id": "atencion",
+      "name": "Atención (attention)",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Para Weil, presencia receptiva ante una persona, un paisaje o un dolor ajeno, sin reducirlos a instrumento ni a problema por resolver."
+    },
+    {
+      "id": "pleonexia",
+      "name": "Pleonexía",
+      "type": "concepto",
+      "era": "Antigua",
+      "desc": "Apetito insaciable de tener siempre más, no por necesidad sino por comparación; para Aristóteles, la raíz de la injusticia."
     }
   ],
   "edges": [
@@ -1847,6 +1889,54 @@
       "target": "confucianismo",
       "relation": "parte_de",
       "label": "desarrolló"
+    },
+    {
+      "source": "eckhart",
+      "target": "gelassenheit",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "heidegger",
+      "target": "gelassenheit",
+      "relation": "desarrollo",
+      "label": "reelaboró"
+    },
+    {
+      "source": "eckhart",
+      "target": "heidegger",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "neoplatonismo",
+      "target": "eckhart",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "heidegger",
+      "target": "das_man",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "weil",
+      "target": "atencion",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "plato",
+      "target": "weil",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "aristoteles",
+      "target": "pleonexia",
+      "relation": "desarrollo",
+      "label": "acuñó"
     }
   ]
 }
