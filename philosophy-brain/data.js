@@ -314,7 +314,8 @@ const PHILOSOPHY_DATA = {
       "name": "Martin Heidegger",
       "type": "filosofo",
       "era": "Contemporánea",
-      "desc": "Discípulo de Husserl; investigó el sentido del Ser a través del análisis del Dasein (el ser-ahí humano)."
+      "desc": "Discípulo de Husserl; investigó el sentido del Ser a través del análisis del Dasein (el ser-ahí humano).",
+      "content": "Ser y Tiempo (1927) abre citando un pasaje del Sofista de Platón (244a): \"Nosotros creíamos otrora comprender lo que significa 'ente', pero ahora nos encontramos en aporía\". Con esa cita, Heidegger denuncia que la pregunta por el ser ha caído en el olvido: no por descuido, sino porque vivimos vueltos hacia los entes (las cosas, las personas, las instituciones) y dejamos de preguntar por aquello que los hace posibles, el ser mismo.\n\nIdentifica tres prejuicios que han bloqueado esa pregunta. El primero es creer que el ser es el concepto más universal y, por tanto, el más claro, cuando en realidad, dice Heidegger, es el más oscuro de todos. El segundo es suponer que el ser es indefinible porque no puede definirse como un ente más entre los entes; pero esa indefinibilidad no exime de preguntar, sino que abre la pregunta. El tercero, el más peligroso, es creer que el ser es evidente por sí mismo, que todo el mundo lo entiende ya: la familiaridad cierra la puerta antes de abrirla.\n\nDe ahí la paradoja con que formula el problema en el §1: \"ya siempre vivimos en una comprensión del ser y, al mismo tiempo, el sentido del ser está envuelto en oscuridad\". Comprendemos el ser preteóricamente, de manera vaga y promedio, pero no sabemos articular qué es.\n\nEl corazón de su respuesta es la diferencia ontológica: el ser no es un ente más. El ente es la piedra, la persona, la institución, cualquier cosa que es. El ser es aquello que hace posible que los entes aparezcan como lo que son; no se lo ve directamente, del mismo modo que no vemos la luz que atraviesa una ventana sino los objetos que ilumina. Por eso lo más cercano —el ser— resulta ser lo más oscuro: se retira precisamente en la medida en que hace visible todo lo demás.\n\nPara plantear esta pregunta hace falta un ente que pueda preguntar por el ser: el ser humano, al que Heidegger llama Dasein ('ser-ahí'). No una conciencia flotante ni un sujeto aislado, sino un existente concreto, arrojado (geworfen) en un mundo que no eligió, y para quien su propio ser es, precisamente, una cuestión. Esta condición de ser-arrojado (Geworfenheit) significa que no elegimos nacer ni el mundo en que aparecemos: simplemente estamos ahí, antes de cualquier decisión, y desde ese arrojamiento el Dasein tiene que hacerse cargo de existir."
     },
     {
       "id": "sartre",
@@ -910,6 +911,41 @@ const PHILOSOPHY_DATA = {
       "type": "concepto",
       "era": "Antigua",
       "desc": "Apetito insaciable de tener siempre más, no por necesidad sino por comparación; para Aristóteles, la raíz de la injusticia."
+    },
+    {
+      "id": "gabriel_marcel",
+      "name": "Gabriel Marcel",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Filósofo cristiano francés; distinguió el problema (que se resuelve desde fuera) del misterio (en el que uno está involucrado), y pensó la esperanza como acto que se ejerce en el nosotros, no en el yo aislado."
+    },
+    {
+      "id": "geworfenheit",
+      "name": "Geworfenheit (ser-arrojado)",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Condición del Dasein de encontrarse ya en un mundo que no eligió, antes de toda decisión; cada instante es un nuevo arrojamiento que la existencia debe asumir."
+    },
+    {
+      "id": "diferencia_ontologica",
+      "name": "Diferencia ontológica",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Distinción heideggeriana entre el ser (lo que hace posible que los entes aparezcan como tales) y el ente (cualquier cosa que es: una piedra, una persona, una institución)."
+    },
+    {
+      "id": "thaumazein",
+      "name": "Thaumazein (el asombro)",
+      "type": "concepto",
+      "era": "Antigua",
+      "desc": "El asombro filosófico ante lo ordinario, señalado por Platón (Teeteto 155c) y Aristóteles (Metafísica I, 982b) como el origen mismo de la filosofía."
+    },
+    {
+      "id": "elpis",
+      "name": "Elpis (la esperanza filosófica)",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "La esperanza entendida no como esperar un contenido futuro, sino como la disposición de apertura que permite recibirlo cuando llega; distinta del optimismo, que cree ya saber cómo termina la historia."
     }
   ],
   "edges": [
@@ -1938,6 +1974,60 @@ const PHILOSOPHY_DATA = {
       "target": "pleonexia",
       "relation": "desarrollo",
       "label": "acuñó"
+    },
+    {
+      "source": "heidegger",
+      "target": "geworfenheit",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "heidegger",
+      "target": "diferencia_ontologica",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "plato",
+      "target": "thaumazein",
+      "relation": "desarrollo",
+      "label": "señaló (Teeteto)"
+    },
+    {
+      "source": "aristoteles",
+      "target": "thaumazein",
+      "relation": "desarrollo",
+      "label": "señaló (Metafísica I)"
+    },
+    {
+      "source": "han",
+      "target": "elpis",
+      "relation": "desarrollo",
+      "label": "formuló (El espíritu de la esperanza)"
+    },
+    {
+      "source": "gabriel_marcel",
+      "target": "elpis",
+      "relation": "desarrollo",
+      "label": "formuló (Homo Viator)"
+    },
+    {
+      "source": "weil",
+      "target": "elpis",
+      "relation": "influyo",
+      "label": "aporta la estructura de (atención)"
+    },
+    {
+      "source": "gabriel_marcel",
+      "target": "existencialismo",
+      "relation": "parte_de",
+      "label": "cercano a (existencialismo cristiano)"
+    },
+    {
+      "source": "heidegger",
+      "target": "gabriel_marcel",
+      "relation": "influyo",
+      "label": "contemporáneo e interlocutor de"
     }
   ]
 };
