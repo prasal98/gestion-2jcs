@@ -13,6 +13,7 @@
       <input id="search" type="text" placeholder="Buscar filósofo, concepto o escuela…" autocomplete="off">
     </div>
     <div class="actions">
+      <button id="btn-random" class="btn" title="Salta a un nodo al azar">🎲 Descubrir</button>
       <button id="btn-add" class="btn btn-accent">+ Agregar</button>
       <button id="btn-export" class="btn">Exportar</button>
       <button id="btn-import" class="btn">Importar</button>
@@ -36,6 +37,11 @@
         <div class="legend-item"><span class="dot" style="background:#7dd3fc"></span>Filósofo</div>
         <div class="legend-item"><span class="dot" style="background:#c084fc"></span>Escuela / corriente</div>
         <div class="legend-item"><span class="dot" style="background:#fbbf24"></span>Concepto</div>
+        <h2 style="margin-top:12px">Relaciones</h2>
+        <div class="legend-item"><span class="line" style="background:#94a3b8"></span>influencia</div>
+        <div class="legend-item"><span class="line" style="background:#f87171"></span>oposición / crítica</div>
+        <div class="legend-item"><span class="line" style="background:#c084fc"></span>fundación / pertenencia</div>
+        <div class="legend-item"><span class="line" style="background:#fbbf24"></span>formulación de concepto</div>
         <p class="hint">Arrastra un nodo para moverlo. Rueda para zoom. Arrastra el fondo para desplazar el mapa.</p>
       </div>
       <div class="panel stats" id="stats"></div>
