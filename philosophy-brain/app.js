@@ -327,6 +327,19 @@
     document.getElementById("detail-name").textContent = n.name;
     document.getElementById("detail-era").textContent = n.era;
     document.getElementById("detail-desc").textContent = n.desc || "";
+    const contentBox = document.getElementById("detail-content");
+    const contentBody = document.getElementById("detail-content-body");
+    if (n.content) {
+      contentBody.innerHTML = "";
+      n.content.split(/\n\n+/).forEach((para) => {
+        const p = document.createElement("p");
+        p.textContent = para;
+        contentBody.appendChild(p);
+      });
+      contentBox.hidden = false;
+    } else {
+      contentBox.hidden = true;
+    }
     const ul = document.getElementById("detail-links");
     ul.innerHTML = "";
     edges.forEach((e) => {

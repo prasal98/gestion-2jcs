@@ -119,6 +119,7 @@ html, body {
 .detail .era { color: var(--text-dim); font-size: 0.8rem; margin: 0 0 12px; }
 .detail p { font-size: 0.88rem; line-height: 1.5; }
 .detail h3 { font-size: 0.78rem; text-transform: uppercase; color: var(--text-dim); margin: 16px 0 8px; }
+.detail-content-body p { font-size: 0.87rem; line-height: 1.6; margin: 0 0 12px; }
 #detail-links { list-style: none; margin: 0; padding: 0; }
 #detail-links li {
   padding: 6px 8px;

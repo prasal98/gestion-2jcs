@@ -15,6 +15,8 @@ concepto, escuela, obra, relación entre ideas, etc.) que **no** esté ya en
    - Nuevo **nodo**: `{ "id": "slug-en-minusculas", "name": "...", "type": "filosofo" | "escuela" | "concepto", "era": "Antigua" | "Medieval" | "Moderna" | "Contemporánea" | "Oriental", "desc": "1-2 frases en español" }`.
    - Nueva **relación**: `{ "source": "<id>", "target": "<id>", "relation": "influyo" | "opuso" | "fundo" | "desarrollo" | "parte_de" | "critico" | "personalizado", "label": "texto breve mostrado en el mapa (ej. 'influyó en')" }`.
    - No dupliques ids existentes; reutiliza los ids ya presentes al conectar con nodos existentes.
+   - Campo opcional **`content`**: texto largo (varios párrafos separados por `\n\n`, en español, sin HTML) que desarrolla en profundidad el pensamiento de ese filósofo/concepto/escuela — no un resumen de una frase, sino una explicación sustantiva (metafísica, ética, lógica, etc., según corresponda). Se muestra en la sección "Pensamiento" del panel de detalle cuando el usuario hace clic en el nodo. No todos los nodos necesitan `content`; agrégalo cuando el usuario pida profundizar en un pensador o cuando el estudio de la conversación dé para más que 1-2 frases.
+   - Fuente preferida para `content`: la colección **Copleston, Historia de la Filosofía** (9 tomos en epub) que vive en la carpeta de Google Drive que el usuario comparte para este proyecto. Usa `philosophy-brain/tools/extract_epub_chapter.py libro.epub inicio fin` para extraer el texto plano de los capítulos relevantes, léelo, y redacta el contenido **con tus propias palabras** (no copies párrafos textuales del libro).
 2. Regenera `philosophy-brain/data.js` a partir de `data.json`:
    ```bash
    cd philosophy-brain
