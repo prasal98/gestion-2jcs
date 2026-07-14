@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cerebro Digital de Filosofía</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>🧠 Cerebro Digital de Filosofía</h1>
+    <div class="search-wrap">
+      <input id="search" type="text" placeholder="Buscar filósofo, concepto o escuela…" autocomplete="off">
+    </div>
+    <div class="actions">
+      <button id="btn-add" class="btn btn-accent">+ Agregar</button>
+      <button id="btn-export" class="btn">Exportar</button>
+      <button id="btn-import" class="btn">Importar</button>
+      <button id="btn-reset" class="btn btn-ghost">Restablecer</button>
+      <input id="file-import" type="file" accept="application/json" hidden>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="panel">
+        <h2>Épocas</h2>
+        <div id="filter-era" class="filter-list"></div>
+      </div>
+      <div class="panel">
+        <h2>Tipo</h2>
+        <div id="filter-type" class="filter-list"></div>
+      </div>
+      <div class="panel legend">
+        <h2>Leyenda</h2>
+        <div class="legend-item"><span class="dot" style="background:#7dd3fc"></span>Filósofo</div>
+        <div class="legend-item"><span class="dot" style="background:#c084fc"></span>Escuela / corriente</div>
+        <div class="legend-item"><span class="dot" style="background:#fbbf24"></span>Concepto</div>
+        <p class="hint">Arrastra un nodo para moverlo. Rueda para zoom. Arrastra el fondo para desplazar el mapa.</p>
+      </div>
+      <div class="panel stats" id="stats"></div>
+    </aside>
+
+    <main class="canvas-wrap">
+      <canvas id="graph"></canvas>
+      <div id="empty-hint" class="empty-hint" hidden>Sin resultados con los filtros actuales.</div>
+    </main>
+
+    <aside id="detail" class="detail" hidden>
+      <button id="detail-close" class="detail-close">✕</button>
+      <span id="detail-type" class="badge"></span>
+      <h2 id="detail-name"></h2>
+      <p id="detail-era" class="era"></p>
+      <p id="detail-desc"></p>
+      <h3>Conexiones</h3>
+      <ul id="detail-links"></ul>
+    </aside>
+  </div>
+
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal">
+      <button id="modal-close" class="detail-close">✕</button>
+      <h2>Agregar al cerebro</h2>
+
+      <form id="form-node">
+        <h3>Nuevo nodo</h3>
+        <label>Nombre <input id="f-name" type="text" required></label>
+        <label>Tipo
+          <select id="f-type">
+            <option value="filosofo">Filósofo</option>
+            <option value="escuela">Escuela / corriente</option>
+            <option value="concepto">Concepto</option>
+          </select>
+        </label>
+        <label>Época
+          <select id="f-era">
+            <option>Antigua</option>
+            <option>Medieval</option>
+            <option>Moderna</option>
+            <option>Contemporánea</option>
+            <option>Oriental</option>
+          </select>
+        </label>
+        <label>Descripción <textarea id="f-desc" rows="3"></textarea></label>
+        <button type="submit" class="btn btn-accent">Agregar nodo</button>
+      </form>
+
+      <form id="form-edge">
+        <h3>Nueva relación</h3>
+        <label>Desde
+          <select id="f-source"></select>
+        </label>
+        <label>Hacia
+          <select id="f-target"></select>
+        </label>
+        <label>Etiqueta (ej. "influyó en", "se opuso a") <input id="f-label" type="text" required></label>
+        <button type="submit" class="btn btn-accent">Agregar relación</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
