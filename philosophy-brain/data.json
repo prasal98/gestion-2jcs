@@ -1,175 +1,1852 @@
 {
   "nodes": [
-    { "id": "socrates", "name": "Sócrates", "type": "filosofo", "era": "Antigua", "desc": "Filósofo ateniense que desarrolló el método mayéutico (preguntas sucesivas) para examinar creencias. No dejó obra escrita; se le conoce por los diálogos de Platón." },
-    { "id": "plato", "name": "Platón", "type": "filosofo", "era": "Antigua", "desc": "Discípulo de Sócrates, fundador de la Academia. Propuso la teoría de las Formas o Ideas como realidad última." },
-    { "id": "aristoteles", "name": "Aristóteles", "type": "filosofo", "era": "Antigua", "desc": "Discípulo de Platón, fundador del Liceo. Sistematizó la lógica y defendió el empirismo frente al idealismo de su maestro." },
-    { "id": "heraclito", "name": "Heráclito", "type": "filosofo", "era": "Antigua", "desc": "Filósofo presocrático conocido por la doctrina del devenir constante: 'todo fluye' (panta rhei)." },
-    { "id": "parmenides", "name": "Parménides", "type": "filosofo", "era": "Antigua", "desc": "Presocrático que sostuvo que el ser es inmutable y uno; el cambio es ilusorio." },
-    { "id": "pitagoras", "name": "Pitágoras", "type": "filosofo", "era": "Antigua", "desc": "Filósofo y matemático que vio en el número la esencia última de la realidad." },
-    { "id": "epicuro", "name": "Epicuro", "type": "filosofo", "era": "Antigua", "desc": "Fundador del epicureísmo: la felicidad se alcanza mediante el placer moderado y la ausencia de perturbación (ataraxia)." },
-    { "id": "zenon_citio", "name": "Zenón de Citio", "type": "filosofo", "era": "Antigua", "desc": "Fundador del estoicismo, escuela centrada en la virtud y el dominio de las pasiones." },
-    { "id": "platonismo", "name": "Platonismo", "type": "escuela", "era": "Antigua", "desc": "Corriente que sostiene la existencia de un mundo de Ideas perfectas e inmutables, separado del mundo sensible." },
-    { "id": "aristotelismo", "name": "Aristotelismo", "type": "escuela", "era": "Antigua", "desc": "Corriente basada en la lógica, la observación empírica y la teoría del hilemorfismo (forma y materia)." },
-    { "id": "estoicismo", "name": "Estoicismo", "type": "escuela", "era": "Antigua", "desc": "Escuela que busca la virtud viviendo en acuerdo con la razón y la naturaleza, aceptando lo que no depende de uno." },
-    { "id": "epicureismo", "name": "Epicureísmo", "type": "escuela", "era": "Antigua", "desc": "Escuela hedonista moderada que busca el placer estable y la ausencia de dolor." },
-    { "id": "escepticismo", "name": "Escepticismo", "type": "escuela", "era": "Antigua", "desc": "Corriente que suspende el juicio (epojé) ante la imposibilidad de alcanzar certeza absoluta." },
-
-    { "id": "agustin", "name": "San Agustín", "type": "filosofo", "era": "Medieval", "desc": "Filósofo cristiano que fusionó el platonismo con la teología, centrando la verdad en la interioridad del alma." },
-    { "id": "aquino", "name": "Tomás de Aquino", "type": "filosofo", "era": "Medieval", "desc": "Teólogo escolástico que armonizó la filosofía aristotélica con la fe cristiana." },
-    { "id": "averroes", "name": "Averroes", "type": "filosofo", "era": "Medieval", "desc": "Filósofo andalusí que comentó extensamente a Aristóteles, influyendo en la escolástica europea." },
-    { "id": "avicena", "name": "Avicena", "type": "filosofo", "era": "Medieval", "desc": "Filósofo y médico persa que combinó el aristotelismo con la metafísica islámica." },
-    { "id": "escolastica", "name": "Escolástica", "type": "escuela", "era": "Medieval", "desc": "Método filosófico-teológico medieval que buscaba conciliar razón y fe mediante la lógica aristotélica." },
-
-    { "id": "descartes", "name": "René Descartes", "type": "filosofo", "era": "Moderna", "desc": "Padre del racionalismo moderno. Su duda metódica culmina en 'pienso, luego existo' (cogito ergo sum)." },
-    { "id": "spinoza", "name": "Baruch Spinoza", "type": "filosofo", "era": "Moderna", "desc": "Racionalista que propuso un monismo panteísta: Dios y la Naturaleza son una misma sustancia." },
-    { "id": "leibniz", "name": "Gottfried Leibniz", "type": "filosofo", "era": "Moderna", "desc": "Racionalista que concibió la realidad como una infinidad de mónadas armonizadas por Dios." },
-    { "id": "locke", "name": "John Locke", "type": "filosofo", "era": "Moderna", "desc": "Empirista que sostuvo que la mente nace como una tabula rasa, llenada por la experiencia." },
-    { "id": "hume", "name": "David Hume", "type": "filosofo", "era": "Moderna", "desc": "Empirista escéptico que cuestionó la causalidad como hábito de la mente, no como necesidad lógica." },
-    { "id": "berkeley", "name": "George Berkeley", "type": "filosofo", "era": "Moderna", "desc": "Empirista idealista: 'ser es ser percibido' (esse est percipi)." },
-    { "id": "hobbes", "name": "Thomas Hobbes", "type": "filosofo", "era": "Moderna", "desc": "Filósofo político que describió el estado de naturaleza como guerra de todos contra todos, resuelto por el contrato social." },
-    { "id": "rousseau", "name": "Jean-Jacques Rousseau", "type": "filosofo", "era": "Moderna", "desc": "Pensador del contrato social basado en la voluntad general y la bondad natural del hombre." },
-    { "id": "kant", "name": "Immanuel Kant", "type": "filosofo", "era": "Moderna", "desc": "Sintetizó racionalismo y empirismo en el idealismo trascendental; propuso el imperativo categórico en ética." },
-    { "id": "hegel", "name": "G. W. F. Hegel", "type": "filosofo", "era": "Moderna", "desc": "Idealista que concibió la historia como despliegue dialéctico del Espíritu (tesis-antítesis-síntesis)." },
-    { "id": "racionalismo", "name": "Racionalismo", "type": "escuela", "era": "Moderna", "desc": "Corriente que sostiene que la razón, no la experiencia, es la fuente principal del conocimiento." },
-    { "id": "empirismo", "name": "Empirismo", "type": "escuela", "era": "Moderna", "desc": "Corriente que sostiene que todo conocimiento proviene de la experiencia sensible." },
-    { "id": "idealismo_aleman", "name": "Idealismo alemán", "type": "escuela", "era": "Moderna", "desc": "Corriente que sitúa a la razón o el espíritu como estructurantes de la realidad conocida." },
-    { "id": "contrato_social", "name": "Contractualismo", "type": "concepto", "era": "Moderna", "desc": "Teoría política según la cual la legitimidad del poder surge de un pacto entre individuos." },
-    { "id": "dialectica", "name": "Dialéctica", "type": "concepto", "era": "Moderna", "desc": "Método de razonamiento por oposición de contrarios (tesis-antítesis-síntesis) que resuelve contradicciones en un plano superior." },
-    { "id": "imperativo_categorico", "name": "Imperativo categórico", "type": "concepto", "era": "Moderna", "desc": "Principio ético kantiano: obra sólo según una máxima que puedas querer que se vuelva ley universal." },
-
-    { "id": "marx", "name": "Karl Marx", "type": "filosofo", "era": "Contemporánea", "desc": "Invirtió la dialéctica hegeliana en materialismo histórico: la base económica determina la superestructura social." },
-    { "id": "nietzsche", "name": "Friedrich Nietzsche", "type": "filosofo", "era": "Contemporánea", "desc": "Crítico radical de la moral tradicional; propuso la voluntad de poder y el eterno retorno." },
-    { "id": "kierkegaard", "name": "Søren Kierkegaard", "type": "filosofo", "era": "Contemporánea", "desc": "Padre del existencialismo; enfatizó la angustia y el salto de fe frente al sistema racional de Hegel." },
-    { "id": "schopenhauer", "name": "Arthur Schopenhauer", "type": "filosofo", "era": "Contemporánea", "desc": "Sostuvo que una voluntad ciega e irracional subyace a toda la realidad, fuente de sufrimiento." },
-    { "id": "mill", "name": "John Stuart Mill", "type": "filosofo", "era": "Contemporánea", "desc": "Desarrolló el utilitarismo, evaluando las acciones por su capacidad de maximizar el bienestar general." },
-    { "id": "bentham", "name": "Jeremy Bentham", "type": "filosofo", "era": "Contemporánea", "desc": "Fundador del utilitarismo clásico: el bien es lo que maximiza el placer y minimiza el dolor." },
-    { "id": "utilitarismo", "name": "Utilitarismo", "type": "escuela", "era": "Contemporánea", "desc": "Ética consecuencialista que juzga las acciones según la utilidad o felicidad que producen." },
-    { "id": "existencialismo", "name": "Existencialismo", "type": "escuela", "era": "Contemporánea", "desc": "Corriente centrada en la existencia individual, la libertad y la angustia de decidir sin esencia previa." },
-    { "id": "marxismo", "name": "Marxismo", "type": "escuela", "era": "Contemporánea", "desc": "Teoría social y política basada en el materialismo histórico y la lucha de clases." },
-
-    { "id": "husserl", "name": "Edmund Husserl", "type": "filosofo", "era": "Contemporánea", "desc": "Fundador de la fenomenología: estudio de las estructuras de la conciencia mediante la reducción eidética." },
-    { "id": "heidegger", "name": "Martin Heidegger", "type": "filosofo", "era": "Contemporánea", "desc": "Discípulo de Husserl; investigó el sentido del Ser a través del análisis del Dasein (el ser-ahí humano)." },
-    { "id": "sartre", "name": "Jean-Paul Sartre", "type": "filosofo", "era": "Contemporánea", "desc": "Existencialista ateo: 'la existencia precede a la esencia'; el hombre está condenado a ser libre." },
-    { "id": "camus", "name": "Albert Camus", "type": "filosofo", "era": "Contemporánea", "desc": "Filósofo del absurdo: la vida carece de sentido último, pero cabe rebelarse afirmándola (Sísifo feliz)." },
-    { "id": "wittgenstein", "name": "Ludwig Wittgenstein", "type": "filosofo", "era": "Contemporánea", "desc": "Transformó la filosofía del lenguaje: del atomismo lógico del Tractatus a los juegos de lenguaje de las Investigaciones." },
-    { "id": "foucault", "name": "Michel Foucault", "type": "filosofo", "era": "Contemporánea", "desc": "Analizó cómo el poder y el saber se entrelazan para producir sujetos e instituciones (prisión, clínica, sexualidad)." },
-    { "id": "derrida", "name": "Jacques Derrida", "type": "filosofo", "era": "Contemporánea", "desc": "Creador de la deconstrucción: desmonta las oposiciones binarias ocultas en los textos filosóficos." },
-    { "id": "habermas", "name": "Jürgen Habermas", "type": "filosofo", "era": "Contemporánea", "desc": "Teórico de la acción comunicativa: la razón se legitima en el diálogo racional entre sujetos libres." },
-    { "id": "rawls", "name": "John Rawls", "type": "filosofo", "era": "Contemporánea", "desc": "Renovó el contractualismo con la 'posición original' y el 'velo de ignorancia' para fundar la justicia como equidad." },
-    { "id": "arendt", "name": "Hannah Arendt", "type": "filosofo", "era": "Contemporánea", "desc": "Analizó los totalitarismos y la 'banalidad del mal'; reflexionó sobre la acción política y la esfera pública." },
-    { "id": "fenomenologia", "name": "Fenomenología", "type": "escuela", "era": "Contemporánea", "desc": "Estudio descriptivo de los fenómenos tal como se presentan a la conciencia, suspendiendo presupuestos previos." },
-    { "id": "filosofia_analitica", "name": "Filosofía analítica", "type": "escuela", "era": "Contemporánea", "desc": "Tradición que privilegia el análisis lógico y lingüístico riguroso de los problemas filosóficos." },
-    { "id": "postestructuralismo", "name": "Posestructuralismo", "type": "escuela", "era": "Contemporánea", "desc": "Corriente que cuestiona las estructuras fijas de significado, poder y verdad postuladas por el estructuralismo." },
-    { "id": "voluntad_poder", "name": "Voluntad de poder", "type": "concepto", "era": "Contemporánea", "desc": "Concepto nietzscheano: el impulso fundamental de todo ser vivo a expandir y afirmar su propia fuerza." },
-
-    { "id": "confucio", "name": "Confucio", "type": "filosofo", "era": "Oriental", "desc": "Pensador chino centrado en la virtud, el ritual (li) y las relaciones sociales armoniosas." },
-    { "id": "laozi", "name": "Laozi", "type": "filosofo", "era": "Oriental", "desc": "Fundador tradicional del taoísmo; autor atribuido del Tao Te Ching, sobre el Tao y el no-actuar (wu wei)." },
-    { "id": "zhuangzi", "name": "Zhuangzi", "type": "filosofo", "era": "Oriental", "desc": "Filósofo taoísta que exploró la relatividad de los puntos de vista y la espontaneidad natural." },
-    { "id": "buda", "name": "Siddhartha Gautama (Buda)", "type": "filosofo", "era": "Oriental", "desc": "Fundador del budismo; enseñó las Cuatro Nobles Verdades y el camino para cesar el sufrimiento (dukkha)." },
-    { "id": "nagarjuna", "name": "Nāgārjuna", "type": "filosofo", "era": "Oriental", "desc": "Filósofo budista fundador de la escuela Madhyamaka; desarrolló el concepto de vacuidad (śūnyatā)." },
-    { "id": "shankara", "name": "Adi Shankara", "type": "filosofo", "era": "Oriental", "desc": "Filósofo hindú que sistematizó el Advaita Vedanta: la no-dualidad entre el Atman individual y el Brahman universal." },
-    { "id": "confucianismo", "name": "Confucianismo", "type": "escuela", "era": "Oriental", "desc": "Tradición ético-política china centrada en la piedad filial, el ritual y la virtud del gobernante." },
-    { "id": "taoismo", "name": "Taoísmo", "type": "escuela", "era": "Oriental", "desc": "Tradición china centrada en vivir en armonía con el Tao mediante la espontaneidad y el no-esfuerzo." },
-    { "id": "budismo", "name": "Budismo", "type": "escuela", "era": "Oriental", "desc": "Tradición fundada por Buda que busca el fin del sufrimiento mediante la comprensión de la impermanencia y el desapego." },
-    { "id": "advaita_vedanta", "name": "Advaita Vedanta", "type": "escuela", "era": "Oriental", "desc": "Escuela hindú no-dualista: la realidad última es una conciencia única sin segundo (Brahman)." },
-    { "id": "tao", "name": "Tao", "type": "concepto", "era": "Oriental", "desc": "El principio último e inefable que fluye a través de todas las cosas en el pensamiento chino." },
-    { "id": "wu_wei", "name": "Wu wei", "type": "concepto", "era": "Oriental", "desc": "'No-acción' o acción sin esfuerzo forzado, en armonía espontánea con el Tao." },
-    { "id": "nirvana", "name": "Nirvana", "type": "concepto", "era": "Oriental", "desc": "Cese del sufrimiento y del ciclo de renacimientos al extinguir el deseo y la ignorancia, en el budismo." },
-    { "id": "sunyata", "name": "Vacuidad (śūnyatā)", "type": "concepto", "era": "Oriental", "desc": "En el budismo Madhyamaka, la ausencia de existencia inherente y fija en todos los fenómenos." }
+    {
+      "id": "socrates",
+      "name": "Sócrates",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Filósofo ateniense que desarrolló el método mayéutico (preguntas sucesivas) para examinar creencias. No dejó obra escrita; se le conoce por los diálogos de Platón."
+    },
+    {
+      "id": "plato",
+      "name": "Platón",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Discípulo de Sócrates, fundador de la Academia. Propuso la teoría de las Formas o Ideas como realidad última."
+    },
+    {
+      "id": "aristoteles",
+      "name": "Aristóteles",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Discípulo de Platón, fundador del Liceo. Sistematizó la lógica y defendió el empirismo frente al idealismo de su maestro."
+    },
+    {
+      "id": "heraclito",
+      "name": "Heráclito",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Filósofo presocrático conocido por la doctrina del devenir constante: 'todo fluye' (panta rhei)."
+    },
+    {
+      "id": "parmenides",
+      "name": "Parménides",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Presocrático que sostuvo que el ser es inmutable y uno; el cambio es ilusorio."
+    },
+    {
+      "id": "pitagoras",
+      "name": "Pitágoras",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Filósofo y matemático que vio en el número la esencia última de la realidad."
+    },
+    {
+      "id": "epicuro",
+      "name": "Epicuro",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Fundador del epicureísmo: la felicidad se alcanza mediante el placer moderado y la ausencia de perturbación (ataraxia)."
+    },
+    {
+      "id": "zenon_citio",
+      "name": "Zenón de Citio",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Fundador del estoicismo, escuela centrada en la virtud y el dominio de las pasiones."
+    },
+    {
+      "id": "platonismo",
+      "name": "Platonismo",
+      "type": "escuela",
+      "era": "Antigua",
+      "desc": "Corriente que sostiene la existencia de un mundo de Ideas perfectas e inmutables, separado del mundo sensible."
+    },
+    {
+      "id": "aristotelismo",
+      "name": "Aristotelismo",
+      "type": "escuela",
+      "era": "Antigua",
+      "desc": "Corriente basada en la lógica, la observación empírica y la teoría del hilemorfismo (forma y materia)."
+    },
+    {
+      "id": "estoicismo",
+      "name": "Estoicismo",
+      "type": "escuela",
+      "era": "Antigua",
+      "desc": "Escuela que busca la virtud viviendo en acuerdo con la razón y la naturaleza, aceptando lo que no depende de uno."
+    },
+    {
+      "id": "epicureismo",
+      "name": "Epicureísmo",
+      "type": "escuela",
+      "era": "Antigua",
+      "desc": "Escuela hedonista moderada que busca el placer estable y la ausencia de dolor."
+    },
+    {
+      "id": "escepticismo",
+      "name": "Escepticismo",
+      "type": "escuela",
+      "era": "Antigua",
+      "desc": "Corriente que suspende el juicio (epojé) ante la imposibilidad de alcanzar certeza absoluta."
+    },
+    {
+      "id": "agustin",
+      "name": "San Agustín",
+      "type": "filosofo",
+      "era": "Medieval",
+      "desc": "Filósofo cristiano que fusionó el platonismo con la teología, centrando la verdad en la interioridad del alma."
+    },
+    {
+      "id": "aquino",
+      "name": "Tomás de Aquino",
+      "type": "filosofo",
+      "era": "Medieval",
+      "desc": "Teólogo escolástico que armonizó la filosofía aristotélica con la fe cristiana."
+    },
+    {
+      "id": "averroes",
+      "name": "Averroes",
+      "type": "filosofo",
+      "era": "Medieval",
+      "desc": "Filósofo andalusí que comentó extensamente a Aristóteles, influyendo en la escolástica europea."
+    },
+    {
+      "id": "avicena",
+      "name": "Avicena",
+      "type": "filosofo",
+      "era": "Medieval",
+      "desc": "Filósofo y médico persa que combinó el aristotelismo con la metafísica islámica."
+    },
+    {
+      "id": "escolastica",
+      "name": "Escolástica",
+      "type": "escuela",
+      "era": "Medieval",
+      "desc": "Método filosófico-teológico medieval que buscaba conciliar razón y fe mediante la lógica aristotélica."
+    },
+    {
+      "id": "descartes",
+      "name": "René Descartes",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Padre del racionalismo moderno. Su duda metódica culmina en 'pienso, luego existo' (cogito ergo sum)."
+    },
+    {
+      "id": "spinoza",
+      "name": "Baruch Spinoza",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Racionalista que propuso un monismo panteísta: Dios y la Naturaleza son una misma sustancia."
+    },
+    {
+      "id": "leibniz",
+      "name": "Gottfried Leibniz",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Racionalista que concibió la realidad como una infinidad de mónadas armonizadas por Dios."
+    },
+    {
+      "id": "locke",
+      "name": "John Locke",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Empirista que sostuvo que la mente nace como una tabula rasa, llenada por la experiencia."
+    },
+    {
+      "id": "hume",
+      "name": "David Hume",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Empirista escéptico que cuestionó la causalidad como hábito de la mente, no como necesidad lógica."
+    },
+    {
+      "id": "berkeley",
+      "name": "George Berkeley",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Empirista idealista: 'ser es ser percibido' (esse est percipi)."
+    },
+    {
+      "id": "hobbes",
+      "name": "Thomas Hobbes",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Filósofo político que describió el estado de naturaleza como guerra de todos contra todos, resuelto por el contrato social."
+    },
+    {
+      "id": "rousseau",
+      "name": "Jean-Jacques Rousseau",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Pensador del contrato social basado en la voluntad general y la bondad natural del hombre."
+    },
+    {
+      "id": "kant",
+      "name": "Immanuel Kant",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Sintetizó racionalismo y empirismo en el idealismo trascendental; propuso el imperativo categórico en ética."
+    },
+    {
+      "id": "hegel",
+      "name": "G. W. F. Hegel",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Idealista que concibió la historia como despliegue dialéctico del Espíritu (tesis-antítesis-síntesis)."
+    },
+    {
+      "id": "racionalismo",
+      "name": "Racionalismo",
+      "type": "escuela",
+      "era": "Moderna",
+      "desc": "Corriente que sostiene que la razón, no la experiencia, es la fuente principal del conocimiento."
+    },
+    {
+      "id": "empirismo",
+      "name": "Empirismo",
+      "type": "escuela",
+      "era": "Moderna",
+      "desc": "Corriente que sostiene que todo conocimiento proviene de la experiencia sensible."
+    },
+    {
+      "id": "idealismo_aleman",
+      "name": "Idealismo alemán",
+      "type": "escuela",
+      "era": "Moderna",
+      "desc": "Corriente que sitúa a la razón o el espíritu como estructurantes de la realidad conocida."
+    },
+    {
+      "id": "contrato_social",
+      "name": "Contractualismo",
+      "type": "concepto",
+      "era": "Moderna",
+      "desc": "Teoría política según la cual la legitimidad del poder surge de un pacto entre individuos."
+    },
+    {
+      "id": "dialectica",
+      "name": "Dialéctica",
+      "type": "concepto",
+      "era": "Moderna",
+      "desc": "Método de razonamiento por oposición de contrarios (tesis-antítesis-síntesis) que resuelve contradicciones en un plano superior."
+    },
+    {
+      "id": "imperativo_categorico",
+      "name": "Imperativo categórico",
+      "type": "concepto",
+      "era": "Moderna",
+      "desc": "Principio ético kantiano: obra sólo según una máxima que puedas querer que se vuelva ley universal."
+    },
+    {
+      "id": "marx",
+      "name": "Karl Marx",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Invirtió la dialéctica hegeliana en materialismo histórico: la base económica determina la superestructura social."
+    },
+    {
+      "id": "nietzsche",
+      "name": "Friedrich Nietzsche",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Crítico radical de la moral tradicional; propuso la voluntad de poder y el eterno retorno."
+    },
+    {
+      "id": "kierkegaard",
+      "name": "Søren Kierkegaard",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Padre del existencialismo; enfatizó la angustia y el salto de fe frente al sistema racional de Hegel."
+    },
+    {
+      "id": "schopenhauer",
+      "name": "Arthur Schopenhauer",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Sostuvo que una voluntad ciega e irracional subyace a toda la realidad, fuente de sufrimiento."
+    },
+    {
+      "id": "mill",
+      "name": "John Stuart Mill",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Desarrolló el utilitarismo, evaluando las acciones por su capacidad de maximizar el bienestar general."
+    },
+    {
+      "id": "bentham",
+      "name": "Jeremy Bentham",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Fundador del utilitarismo clásico: el bien es lo que maximiza el placer y minimiza el dolor."
+    },
+    {
+      "id": "utilitarismo",
+      "name": "Utilitarismo",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Ética consecuencialista que juzga las acciones según la utilidad o felicidad que producen."
+    },
+    {
+      "id": "existencialismo",
+      "name": "Existencialismo",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Corriente centrada en la existencia individual, la libertad y la angustia de decidir sin esencia previa."
+    },
+    {
+      "id": "marxismo",
+      "name": "Marxismo",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Teoría social y política basada en el materialismo histórico y la lucha de clases."
+    },
+    {
+      "id": "husserl",
+      "name": "Edmund Husserl",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Fundador de la fenomenología: estudio de las estructuras de la conciencia mediante la reducción eidética."
+    },
+    {
+      "id": "heidegger",
+      "name": "Martin Heidegger",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Discípulo de Husserl; investigó el sentido del Ser a través del análisis del Dasein (el ser-ahí humano)."
+    },
+    {
+      "id": "sartre",
+      "name": "Jean-Paul Sartre",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Existencialista ateo: 'la existencia precede a la esencia'; el hombre está condenado a ser libre."
+    },
+    {
+      "id": "camus",
+      "name": "Albert Camus",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Filósofo del absurdo: la vida carece de sentido último, pero cabe rebelarse afirmándola (Sísifo feliz)."
+    },
+    {
+      "id": "wittgenstein",
+      "name": "Ludwig Wittgenstein",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Transformó la filosofía del lenguaje: del atomismo lógico del Tractatus a los juegos de lenguaje de las Investigaciones."
+    },
+    {
+      "id": "foucault",
+      "name": "Michel Foucault",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Analizó cómo el poder y el saber se entrelazan para producir sujetos e instituciones (prisión, clínica, sexualidad)."
+    },
+    {
+      "id": "derrida",
+      "name": "Jacques Derrida",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Creador de la deconstrucción: desmonta las oposiciones binarias ocultas en los textos filosóficos."
+    },
+    {
+      "id": "habermas",
+      "name": "Jürgen Habermas",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Teórico de la acción comunicativa: la razón se legitima en el diálogo racional entre sujetos libres."
+    },
+    {
+      "id": "rawls",
+      "name": "John Rawls",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Renovó el contractualismo con la 'posición original' y el 'velo de ignorancia' para fundar la justicia como equidad."
+    },
+    {
+      "id": "arendt",
+      "name": "Hannah Arendt",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Analizó los totalitarismos y la 'banalidad del mal'; reflexionó sobre la acción política y la esfera pública."
+    },
+    {
+      "id": "fenomenologia",
+      "name": "Fenomenología",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Estudio descriptivo de los fenómenos tal como se presentan a la conciencia, suspendiendo presupuestos previos."
+    },
+    {
+      "id": "filosofia_analitica",
+      "name": "Filosofía analítica",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Tradición que privilegia el análisis lógico y lingüístico riguroso de los problemas filosóficos."
+    },
+    {
+      "id": "postestructuralismo",
+      "name": "Posestructuralismo",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Corriente que cuestiona las estructuras fijas de significado, poder y verdad postuladas por el estructuralismo."
+    },
+    {
+      "id": "voluntad_poder",
+      "name": "Voluntad de poder",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Concepto nietzscheano: el impulso fundamental de todo ser vivo a expandir y afirmar su propia fuerza."
+    },
+    {
+      "id": "confucio",
+      "name": "Confucio",
+      "type": "filosofo",
+      "era": "Oriental",
+      "desc": "Pensador chino centrado en la virtud, el ritual (li) y las relaciones sociales armoniosas."
+    },
+    {
+      "id": "laozi",
+      "name": "Laozi",
+      "type": "filosofo",
+      "era": "Oriental",
+      "desc": "Fundador tradicional del taoísmo; autor atribuido del Tao Te Ching, sobre el Tao y el no-actuar (wu wei)."
+    },
+    {
+      "id": "zhuangzi",
+      "name": "Zhuangzi",
+      "type": "filosofo",
+      "era": "Oriental",
+      "desc": "Filósofo taoísta que exploró la relatividad de los puntos de vista y la espontaneidad natural."
+    },
+    {
+      "id": "buda",
+      "name": "Siddhartha Gautama (Buda)",
+      "type": "filosofo",
+      "era": "Oriental",
+      "desc": "Fundador del budismo; enseñó las Cuatro Nobles Verdades y el camino para cesar el sufrimiento (dukkha)."
+    },
+    {
+      "id": "nagarjuna",
+      "name": "Nāgārjuna",
+      "type": "filosofo",
+      "era": "Oriental",
+      "desc": "Filósofo budista fundador de la escuela Madhyamaka; desarrolló el concepto de vacuidad (śūnyatā)."
+    },
+    {
+      "id": "shankara",
+      "name": "Adi Shankara",
+      "type": "filosofo",
+      "era": "Oriental",
+      "desc": "Filósofo hindú que sistematizó el Advaita Vedanta: la no-dualidad entre el Atman individual y el Brahman universal."
+    },
+    {
+      "id": "confucianismo",
+      "name": "Confucianismo",
+      "type": "escuela",
+      "era": "Oriental",
+      "desc": "Tradición ético-política china centrada en la piedad filial, el ritual y la virtud del gobernante."
+    },
+    {
+      "id": "taoismo",
+      "name": "Taoísmo",
+      "type": "escuela",
+      "era": "Oriental",
+      "desc": "Tradición china centrada en vivir en armonía con el Tao mediante la espontaneidad y el no-esfuerzo."
+    },
+    {
+      "id": "budismo",
+      "name": "Budismo",
+      "type": "escuela",
+      "era": "Oriental",
+      "desc": "Tradición fundada por Buda que busca el fin del sufrimiento mediante la comprensión de la impermanencia y el desapego."
+    },
+    {
+      "id": "advaita_vedanta",
+      "name": "Advaita Vedanta",
+      "type": "escuela",
+      "era": "Oriental",
+      "desc": "Escuela hindú no-dualista: la realidad última es una conciencia única sin segundo (Brahman)."
+    },
+    {
+      "id": "tao",
+      "name": "Tao",
+      "type": "concepto",
+      "era": "Oriental",
+      "desc": "El principio último e inefable que fluye a través de todas las cosas en el pensamiento chino."
+    },
+    {
+      "id": "wu_wei",
+      "name": "Wu wei",
+      "type": "concepto",
+      "era": "Oriental",
+      "desc": "'No-acción' o acción sin esfuerzo forzado, en armonía espontánea con el Tao."
+    },
+    {
+      "id": "nirvana",
+      "name": "Nirvana",
+      "type": "concepto",
+      "era": "Oriental",
+      "desc": "Cese del sufrimiento y del ciclo de renacimientos al extinguir el deseo y la ignorancia, en el budismo."
+    },
+    {
+      "id": "sunyata",
+      "name": "Vacuidad (śūnyatā)",
+      "type": "concepto",
+      "era": "Oriental",
+      "desc": "En el budismo Madhyamaka, la ausencia de existencia inherente y fija en todos los fenómenos."
+    },
+    {
+      "id": "diogenes",
+      "name": "Diógenes de Sinope",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Cínico radical que vivió en un tonel desafiando toda convención social; buscó la virtud en la vida conforme a la naturaleza."
+    },
+    {
+      "id": "seneca",
+      "name": "Séneca",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Estoico romano; sus cartas y tratados sobre la brevedad de la vida y la ira difundieron el estoicismo práctico."
+    },
+    {
+      "id": "epicteto",
+      "name": "Epicteto",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Esclavo liberto y maestro estoico: la libertad consiste en distinguir lo que depende de nosotros de lo que no."
+    },
+    {
+      "id": "marco_aurelio",
+      "name": "Marco Aurelio",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Emperador romano y filósofo estoico; sus 'Meditaciones' son un diario de ejercicio espiritual."
+    },
+    {
+      "id": "plotino",
+      "name": "Plotino",
+      "type": "filosofo",
+      "era": "Antigua",
+      "desc": "Fundador del neoplatonismo: toda la realidad emana del Uno inefable, al que el alma aspira a retornar."
+    },
+    {
+      "id": "cinismo",
+      "name": "Cinismo",
+      "type": "escuela",
+      "era": "Antigua",
+      "desc": "Escuela que rechaza las convenciones sociales y busca la autosuficiencia viviendo conforme a la naturaleza."
+    },
+    {
+      "id": "neoplatonismo",
+      "name": "Neoplatonismo",
+      "type": "escuela",
+      "era": "Antigua",
+      "desc": "Síntesis mística del platonismo: la realidad emana jerárquicamente del Uno, y el alma puede ascender de vuelta."
+    },
+    {
+      "id": "mayeutica",
+      "name": "Mayéutica",
+      "type": "concepto",
+      "era": "Antigua",
+      "desc": "Arte socrático de 'dar a luz' las ideas del interlocutor mediante preguntas encadenadas."
+    },
+    {
+      "id": "teoria_formas",
+      "name": "Teoría de las Formas",
+      "type": "concepto",
+      "era": "Antigua",
+      "desc": "Doctrina platónica: las cosas sensibles participan de Ideas perfectas, eternas e inmutables."
+    },
+    {
+      "id": "ataraxia",
+      "name": "Ataraxia",
+      "type": "concepto",
+      "era": "Antigua",
+      "desc": "Serenidad e imperturbabilidad del ánimo, ideal compartido por epicúreos, estoicos y escépticos."
+    },
+    {
+      "id": "anselmo",
+      "name": "San Anselmo",
+      "type": "filosofo",
+      "era": "Medieval",
+      "desc": "Formuló el argumento ontológico: Dios, como aquello mayor que lo cual nada puede pensarse, debe existir."
+    },
+    {
+      "id": "ockham",
+      "name": "Guillermo de Ockham",
+      "type": "filosofo",
+      "era": "Medieval",
+      "desc": "Nominalista: solo existen individuos, no universales. Su 'navaja' exige no multiplicar entidades sin necesidad."
+    },
+    {
+      "id": "navaja_ockham",
+      "name": "Navaja de Ockham",
+      "type": "concepto",
+      "era": "Medieval",
+      "desc": "Principio de economía: entre explicaciones rivales, preferir la que postula menos entidades."
+    },
+    {
+      "id": "maquiavelo",
+      "name": "Nicolás Maquiavelo",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Fundador del realismo político: en 'El Príncipe' separa la política de la moral y analiza el poder tal como es."
+    },
+    {
+      "id": "montaigne",
+      "name": "Michel de Montaigne",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Creador del ensayo como género; escéptico moderado cuyo lema fue '¿Qué sé yo?' (Que sais-je?)."
+    },
+    {
+      "id": "bacon",
+      "name": "Francis Bacon",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Propuso el método inductivo y la ciencia experimental como instrumento de dominio de la naturaleza."
+    },
+    {
+      "id": "pascal",
+      "name": "Blaise Pascal",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Matemático y apologista: 'el corazón tiene razones que la razón no conoce'; famoso por su apuesta sobre Dios."
+    },
+    {
+      "id": "voltaire",
+      "name": "Voltaire",
+      "type": "filosofo",
+      "era": "Moderna",
+      "desc": "Figura central de la Ilustración francesa; combatió el fanatismo y defendió la tolerancia y la libertad de expresión."
+    },
+    {
+      "id": "ilustracion",
+      "name": "Ilustración",
+      "type": "escuela",
+      "era": "Moderna",
+      "desc": "Movimiento del siglo XVIII que confía en la razón como motor de progreso y crítica de la superstición y el absolutismo."
+    },
+    {
+      "id": "cogito",
+      "name": "Cogito ergo sum",
+      "type": "concepto",
+      "era": "Moderna",
+      "desc": "'Pienso, luego existo': la certeza indudable del yo pensante, fundamento del edificio cartesiano."
+    },
+    {
+      "id": "tabula_rasa",
+      "name": "Tabula rasa",
+      "type": "concepto",
+      "era": "Moderna",
+      "desc": "La mente nace como una hoja en blanco: todo su contenido proviene de la experiencia."
+    },
+    {
+      "id": "comte",
+      "name": "Auguste Comte",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Fundador del positivismo y de la sociología; la humanidad progresa del estadio teológico al metafísico y al positivo."
+    },
+    {
+      "id": "peirce",
+      "name": "Charles S. Peirce",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Fundador del pragmatismo y de la semiótica moderna: el significado de un concepto son sus efectos prácticos concebibles."
+    },
+    {
+      "id": "william_james",
+      "name": "William James",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Popularizó el pragmatismo: la verdad es lo que funciona y se verifica en la experiencia."
+    },
+    {
+      "id": "dewey",
+      "name": "John Dewey",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Pragmatista instrumental: las ideas son herramientas para resolver problemas; teórico de la educación democrática."
+    },
+    {
+      "id": "frege",
+      "name": "Gottlob Frege",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Padre de la lógica moderna; su distinción entre sentido y referencia inaugura la filosofía del lenguaje."
+    },
+    {
+      "id": "russell",
+      "name": "Bertrand Russell",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Cofundador de la filosofía analítica; desarrolló el atomismo lógico y la teoría de las descripciones."
+    },
+    {
+      "id": "popper",
+      "name": "Karl Popper",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Filósofo de la ciencia: una teoría solo es científica si puede ser refutada; defensor de la sociedad abierta."
+    },
+    {
+      "id": "kuhn",
+      "name": "Thomas Kuhn",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Mostró que la ciencia avanza por revoluciones que reemplazan paradigmas, no por acumulación lineal."
+    },
+    {
+      "id": "beauvoir",
+      "name": "Simone de Beauvoir",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Existencialista y fundadora del feminismo filosófico moderno con 'El segundo sexo'."
+    },
+    {
+      "id": "merleau_ponty",
+      "name": "Maurice Merleau-Ponty",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Fenomenólogo del cuerpo: percibimos el mundo desde un cuerpo vivido, no desde una conciencia pura."
+    },
+    {
+      "id": "levinas",
+      "name": "Emmanuel Levinas",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "La ética es la filosofía primera: el rostro del Otro me obliga antes que todo conocimiento."
+    },
+    {
+      "id": "gadamer",
+      "name": "Hans-Georg Gadamer",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Sistematizó la hermenéutica filosófica: comprender es fusionar horizontes entre el texto y el intérprete."
+    },
+    {
+      "id": "ortega",
+      "name": "José Ortega y Gasset",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Raciovitalista español: 'yo soy yo y mi circunstancia, y si no la salvo a ella no me salvo yo'."
+    },
+    {
+      "id": "han",
+      "name": "Byung-Chul Han",
+      "type": "filosofo",
+      "era": "Contemporánea",
+      "desc": "Crítico de la sociedad del rendimiento: la autoexplotación y la hiperconexión producen el cansancio contemporáneo."
+    },
+    {
+      "id": "positivismo",
+      "name": "Positivismo",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Corriente que solo admite como conocimiento válido el verificable por la ciencia empírica."
+    },
+    {
+      "id": "pragmatismo",
+      "name": "Pragmatismo",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Corriente estadounidense que mide el significado y la verdad de las ideas por sus consecuencias prácticas."
+    },
+    {
+      "id": "hermeneutica",
+      "name": "Hermenéutica",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Teoría filosófica de la interpretación y la comprensión de textos, acciones y tradiciones."
+    },
+    {
+      "id": "feminismo_filosofico",
+      "name": "Feminismo filosófico",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Análisis crítico de cómo el género estructura el conocimiento, la moral y el poder."
+    },
+    {
+      "id": "filosofia_ciencia",
+      "name": "Filosofía de la ciencia",
+      "type": "escuela",
+      "era": "Contemporánea",
+      "desc": "Rama que examina la naturaleza, métodos y límites del conocimiento científico."
+    },
+    {
+      "id": "superhombre",
+      "name": "Superhombre (Übermensch)",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Ideal nietzscheano del que crea sus propios valores tras la 'muerte de Dios'."
+    },
+    {
+      "id": "eterno_retorno",
+      "name": "Eterno retorno",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Prueba existencial de Nietzsche: vivir de modo que quieras que cada instante se repita eternamente."
+    },
+    {
+      "id": "alienacion",
+      "name": "Alienación",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Extrañamiento del trabajador respecto de su producto, su actividad y su propia esencia, según Marx."
+    },
+    {
+      "id": "falsacionismo",
+      "name": "Falsacionismo",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Criterio de Popper: una teoría es científica solo si especifica qué observación la refutaría."
+    },
+    {
+      "id": "paradigma",
+      "name": "Paradigma",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Marco de supuestos, métodos y ejemplos compartidos que define la 'ciencia normal' de una época, según Kuhn."
+    },
+    {
+      "id": "dasein",
+      "name": "Dasein",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "El 'ser-ahí': el humano como el ente arrojado al mundo cuyo ser consiste en comprenderse."
+    },
+    {
+      "id": "absurdo",
+      "name": "El absurdo",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Choque entre la sed humana de sentido y el silencio irracional del mundo, según Camus."
+    },
+    {
+      "id": "juegos_lenguaje",
+      "name": "Juegos de lenguaje",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "El significado de una palabra es su uso dentro de formas de vida concretas, según el segundo Wittgenstein."
+    },
+    {
+      "id": "velo_ignorancia",
+      "name": "Velo de la ignorancia",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Dispositivo de Rawls: elegir los principios de justicia sin saber qué posición ocuparás en la sociedad."
+    },
+    {
+      "id": "banalidad_mal",
+      "name": "Banalidad del mal",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Tesis de Arendt: el mal extremo puede nacer de la irreflexión y la obediencia burocrática, no de monstruos."
+    },
+    {
+      "id": "deconstruccion",
+      "name": "Deconstrucción",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Estrategia de Derrida para desmontar las jerarquías binarias (habla/escritura, presencia/ausencia) de los textos."
+    },
+    {
+      "id": "segundo_sexo",
+      "name": "\"No se nace mujer\"",
+      "type": "concepto",
+      "era": "Contemporánea",
+      "desc": "Tesis de Beauvoir: el género no es destino biológico sino construcción social e histórica."
+    },
+    {
+      "id": "mencio",
+      "name": "Mencio",
+      "type": "filosofo",
+      "era": "Oriental",
+      "desc": "Continuador de Confucio; sostuvo que la naturaleza humana es originalmente buena, como brotes que hay que cultivar."
+    }
   ],
   "edges": [
-    { "source": "socrates", "target": "plato", "relation": "influyo", "label": "influyó en" },
-    { "source": "plato", "target": "aristoteles", "relation": "influyo", "label": "influyó en" },
-    { "source": "heraclito", "target": "parmenides", "relation": "opuso", "label": "se opone a" },
-    { "source": "plato", "target": "platonismo", "relation": "fundo", "label": "fundó" },
-    { "source": "aristoteles", "target": "aristotelismo", "relation": "fundo", "label": "fundó" },
-    { "source": "socrates", "target": "estoicismo", "relation": "influyo", "label": "influyó en" },
-    { "source": "zenon_citio", "target": "estoicismo", "relation": "fundo", "label": "fundó" },
-    { "source": "epicuro", "target": "epicureismo", "relation": "fundo", "label": "fundó" },
-    { "source": "pitagoras", "target": "platonismo", "relation": "influyo", "label": "influyó en" },
-    { "source": "parmenides", "target": "platonismo", "relation": "influyo", "label": "influyó en" },
-    { "source": "escepticismo", "target": "platonismo", "relation": "critico", "label": "cuestiona la certeza de" },
-
-    { "source": "platonismo", "target": "agustin", "relation": "influyo", "label": "influyó en" },
-    { "source": "aristotelismo", "target": "aquino", "relation": "influyo", "label": "influyó en" },
-    { "source": "aristoteles", "target": "averroes", "relation": "influyo", "label": "influyó en" },
-    { "source": "aristoteles", "target": "avicena", "relation": "influyo", "label": "influyó en" },
-    { "source": "averroes", "target": "aquino", "relation": "influyo", "label": "influyó en" },
-    { "source": "avicena", "target": "escolastica", "relation": "parte_de", "label": "aporta a" },
-    { "source": "agustin", "target": "escolastica", "relation": "influyo", "label": "influyó en" },
-    { "source": "aquino", "target": "escolastica", "relation": "parte_de", "label": "sistematizó" },
-
-    { "source": "descartes", "target": "racionalismo", "relation": "fundo", "label": "fundó" },
-    { "source": "spinoza", "target": "racionalismo", "relation": "parte_de", "label": "pertenece a" },
-    { "source": "leibniz", "target": "racionalismo", "relation": "parte_de", "label": "pertenece a" },
-    { "source": "descartes", "target": "spinoza", "relation": "influyo", "label": "influyó en" },
-    { "source": "descartes", "target": "leibniz", "relation": "influyo", "label": "influyó en" },
-    { "source": "locke", "target": "empirismo", "relation": "fundo", "label": "fundó" },
-    { "source": "hume", "target": "empirismo", "relation": "parte_de", "label": "radicalizó" },
-    { "source": "berkeley", "target": "empirismo", "relation": "parte_de", "label": "pertenece a" },
-    { "source": "locke", "target": "berkeley", "relation": "influyo", "label": "influyó en" },
-    { "source": "berkeley", "target": "hume", "relation": "influyo", "label": "influyó en" },
-    { "source": "racionalismo", "target": "kant", "relation": "influyo", "label": "influyó en (tesis)" },
-    { "source": "empirismo", "target": "kant", "relation": "influyo", "label": "influyó en (antítesis)" },
-    { "source": "hume", "target": "kant", "relation": "influyo", "label": "lo despertó del sueño dogmático" },
-    { "source": "kant", "target": "imperativo_categorico", "relation": "desarrollo", "label": "formuló" },
-    { "source": "kant", "target": "idealismo_aleman", "relation": "fundo", "label": "inauguró" },
-    { "source": "kant", "target": "hegel", "relation": "influyo", "label": "influyó en" },
-    { "source": "hegel", "target": "idealismo_aleman", "relation": "parte_de", "label": "culminó" },
-    { "source": "hegel", "target": "dialectica", "relation": "desarrollo", "label": "sistematizó" },
-    { "source": "hobbes", "target": "contrato_social", "relation": "desarrollo", "label": "formuló" },
-    { "source": "hobbes", "target": "rousseau", "relation": "influyo", "label": "influyó en" },
-    { "source": "locke", "target": "contrato_social", "relation": "desarrollo", "label": "reformuló" },
-    { "source": "rousseau", "target": "contrato_social", "relation": "desarrollo", "label": "reformuló" },
-    { "source": "rousseau", "target": "kant", "relation": "influyo", "label": "influyó en" },
-    { "source": "contrato_social", "target": "rawls", "relation": "influyo", "label": "influyó en" },
-
-    { "source": "hegel", "target": "marx", "relation": "influyo", "label": "influyó en" },
-    { "source": "marx", "target": "dialectica", "relation": "desarrollo", "label": "invirtió (materialismo histórico)" },
-    { "source": "marx", "target": "marxismo", "relation": "fundo", "label": "fundó" },
-    { "source": "hegel", "target": "kierkegaard", "relation": "opuso", "label": "se opuso a su sistema" },
-    { "source": "kierkegaard", "target": "existencialismo", "relation": "fundo", "label": "sentó las bases de" },
-    { "source": "schopenhauer", "target": "nietzsche", "relation": "influyo", "label": "influyó en" },
-    { "source": "nietzsche", "target": "voluntad_poder", "relation": "desarrollo", "label": "formuló" },
-    { "source": "nietzsche", "target": "existencialismo", "relation": "influyo", "label": "influyó en" },
-    { "source": "bentham", "target": "utilitarismo", "relation": "fundo", "label": "fundó" },
-    { "source": "bentham", "target": "mill", "relation": "influyo", "label": "influyó en" },
-    { "source": "mill", "target": "utilitarismo", "relation": "parte_de", "label": "refinó" },
-
-    { "source": "husserl", "target": "fenomenologia", "relation": "fundo", "label": "fundó" },
-    { "source": "husserl", "target": "heidegger", "relation": "influyo", "label": "influyó en" },
-    { "source": "heidegger", "target": "fenomenologia", "relation": "parte_de", "label": "reorientó (ontología)" },
-    { "source": "kierkegaard", "target": "heidegger", "relation": "influyo", "label": "influyó en" },
-    { "source": "heidegger", "target": "sartre", "relation": "influyo", "label": "influyó en" },
-    { "source": "nietzsche", "target": "sartre", "relation": "influyo", "label": "influyó en" },
-    { "source": "sartre", "target": "existencialismo", "relation": "parte_de", "label": "sistematizó" },
-    { "source": "sartre", "target": "camus", "relation": "opuso", "label": "debatió con" },
-    { "source": "camus", "target": "existencialismo", "relation": "parte_de", "label": "próximo a (filosofía del absurdo)" },
-    { "source": "wittgenstein", "target": "filosofia_analitica", "relation": "parte_de", "label": "transformó" },
-    { "source": "heidegger", "target": "foucault", "relation": "influyo", "label": "influyó en" },
-    { "source": "nietzsche", "target": "foucault", "relation": "influyo", "label": "influyó en" },
-    { "source": "foucault", "target": "postestructuralismo", "relation": "parte_de", "label": "pertenece a" },
-    { "source": "heidegger", "target": "derrida", "relation": "influyo", "label": "influyó en" },
-    { "source": "derrida", "target": "postestructuralismo", "relation": "fundo", "label": "fundó (deconstrucción)" },
-    { "source": "marx", "target": "habermas", "relation": "influyo", "label": "influyó en" },
-    { "source": "kant", "target": "habermas", "relation": "influyo", "label": "influyó en" },
-    { "source": "kant", "target": "rawls", "relation": "influyo", "label": "influyó en" },
-    { "source": "hegel", "target": "arendt", "relation": "influyo", "label": "influyó en (marco histórico)" },
-    { "source": "heidegger", "target": "arendt", "relation": "influyo", "label": "fue su maestro" },
-
-    { "source": "confucio", "target": "confucianismo", "relation": "fundo", "label": "fundó" },
-    { "source": "laozi", "target": "taoismo", "relation": "fundo", "label": "fundó" },
-    { "source": "laozi", "target": "tao", "relation": "desarrollo", "label": "formuló" },
-    { "source": "laozi", "target": "wu_wei", "relation": "desarrollo", "label": "formuló" },
-    { "source": "zhuangzi", "target": "taoismo", "relation": "parte_de", "label": "desarrolló" },
-    { "source": "confucianismo", "target": "taoismo", "relation": "opuso", "label": "contrasta con" },
-    { "source": "buda", "target": "budismo", "relation": "fundo", "label": "fundó" },
-    { "source": "buda", "target": "nirvana", "relation": "desarrollo", "label": "formuló" },
-    { "source": "nagarjuna", "target": "budismo", "relation": "parte_de", "label": "sistematizó (Madhyamaka)" },
-    { "source": "nagarjuna", "target": "sunyata", "relation": "desarrollo", "label": "formuló" },
-    { "source": "shankara", "target": "advaita_vedanta", "relation": "fundo", "label": "sistematizó" },
-    { "source": "budismo", "target": "advaita_vedanta", "relation": "influyo", "label": "influyó en" },
-    { "source": "buda", "target": "schopenhauer", "relation": "influyo", "label": "influyó en" },
-    { "source": "advaita_vedanta", "target": "schopenhauer", "relation": "influyo", "label": "influyó en" }
+    {
+      "source": "socrates",
+      "target": "plato",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "plato",
+      "target": "aristoteles",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "heraclito",
+      "target": "parmenides",
+      "relation": "opuso",
+      "label": "se opone a"
+    },
+    {
+      "source": "plato",
+      "target": "platonismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "aristoteles",
+      "target": "aristotelismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "socrates",
+      "target": "estoicismo",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "zenon_citio",
+      "target": "estoicismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "epicuro",
+      "target": "epicureismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "pitagoras",
+      "target": "platonismo",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "parmenides",
+      "target": "platonismo",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "escepticismo",
+      "target": "platonismo",
+      "relation": "critico",
+      "label": "cuestiona la certeza de"
+    },
+    {
+      "source": "platonismo",
+      "target": "agustin",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "aristotelismo",
+      "target": "aquino",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "aristoteles",
+      "target": "averroes",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "aristoteles",
+      "target": "avicena",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "averroes",
+      "target": "aquino",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "avicena",
+      "target": "escolastica",
+      "relation": "parte_de",
+      "label": "aporta a"
+    },
+    {
+      "source": "agustin",
+      "target": "escolastica",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "aquino",
+      "target": "escolastica",
+      "relation": "parte_de",
+      "label": "sistematizó"
+    },
+    {
+      "source": "descartes",
+      "target": "racionalismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "spinoza",
+      "target": "racionalismo",
+      "relation": "parte_de",
+      "label": "pertenece a"
+    },
+    {
+      "source": "leibniz",
+      "target": "racionalismo",
+      "relation": "parte_de",
+      "label": "pertenece a"
+    },
+    {
+      "source": "descartes",
+      "target": "spinoza",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "descartes",
+      "target": "leibniz",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "locke",
+      "target": "empirismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "hume",
+      "target": "empirismo",
+      "relation": "parte_de",
+      "label": "radicalizó"
+    },
+    {
+      "source": "berkeley",
+      "target": "empirismo",
+      "relation": "parte_de",
+      "label": "pertenece a"
+    },
+    {
+      "source": "locke",
+      "target": "berkeley",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "berkeley",
+      "target": "hume",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "racionalismo",
+      "target": "kant",
+      "relation": "influyo",
+      "label": "influyó en (tesis)"
+    },
+    {
+      "source": "empirismo",
+      "target": "kant",
+      "relation": "influyo",
+      "label": "influyó en (antítesis)"
+    },
+    {
+      "source": "hume",
+      "target": "kant",
+      "relation": "influyo",
+      "label": "lo despertó del sueño dogmático"
+    },
+    {
+      "source": "kant",
+      "target": "imperativo_categorico",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "kant",
+      "target": "idealismo_aleman",
+      "relation": "fundo",
+      "label": "inauguró"
+    },
+    {
+      "source": "kant",
+      "target": "hegel",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "hegel",
+      "target": "idealismo_aleman",
+      "relation": "parte_de",
+      "label": "culminó"
+    },
+    {
+      "source": "hegel",
+      "target": "dialectica",
+      "relation": "desarrollo",
+      "label": "sistematizó"
+    },
+    {
+      "source": "hobbes",
+      "target": "contrato_social",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "hobbes",
+      "target": "rousseau",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "locke",
+      "target": "contrato_social",
+      "relation": "desarrollo",
+      "label": "reformuló"
+    },
+    {
+      "source": "rousseau",
+      "target": "contrato_social",
+      "relation": "desarrollo",
+      "label": "reformuló"
+    },
+    {
+      "source": "rousseau",
+      "target": "kant",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "contrato_social",
+      "target": "rawls",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "hegel",
+      "target": "marx",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "marx",
+      "target": "dialectica",
+      "relation": "desarrollo",
+      "label": "invirtió (materialismo histórico)"
+    },
+    {
+      "source": "marx",
+      "target": "marxismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "hegel",
+      "target": "kierkegaard",
+      "relation": "opuso",
+      "label": "se opuso a su sistema"
+    },
+    {
+      "source": "kierkegaard",
+      "target": "existencialismo",
+      "relation": "fundo",
+      "label": "sentó las bases de"
+    },
+    {
+      "source": "schopenhauer",
+      "target": "nietzsche",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "nietzsche",
+      "target": "voluntad_poder",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "nietzsche",
+      "target": "existencialismo",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "bentham",
+      "target": "utilitarismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "bentham",
+      "target": "mill",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "mill",
+      "target": "utilitarismo",
+      "relation": "parte_de",
+      "label": "refinó"
+    },
+    {
+      "source": "husserl",
+      "target": "fenomenologia",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "husserl",
+      "target": "heidegger",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "heidegger",
+      "target": "fenomenologia",
+      "relation": "parte_de",
+      "label": "reorientó (ontología)"
+    },
+    {
+      "source": "kierkegaard",
+      "target": "heidegger",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "heidegger",
+      "target": "sartre",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "nietzsche",
+      "target": "sartre",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "sartre",
+      "target": "existencialismo",
+      "relation": "parte_de",
+      "label": "sistematizó"
+    },
+    {
+      "source": "sartre",
+      "target": "camus",
+      "relation": "opuso",
+      "label": "debatió con"
+    },
+    {
+      "source": "camus",
+      "target": "existencialismo",
+      "relation": "parte_de",
+      "label": "próximo a (filosofía del absurdo)"
+    },
+    {
+      "source": "wittgenstein",
+      "target": "filosofia_analitica",
+      "relation": "parte_de",
+      "label": "transformó"
+    },
+    {
+      "source": "heidegger",
+      "target": "foucault",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "nietzsche",
+      "target": "foucault",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "foucault",
+      "target": "postestructuralismo",
+      "relation": "parte_de",
+      "label": "pertenece a"
+    },
+    {
+      "source": "heidegger",
+      "target": "derrida",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "derrida",
+      "target": "postestructuralismo",
+      "relation": "fundo",
+      "label": "fundó (deconstrucción)"
+    },
+    {
+      "source": "marx",
+      "target": "habermas",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "kant",
+      "target": "habermas",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "kant",
+      "target": "rawls",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "hegel",
+      "target": "arendt",
+      "relation": "influyo",
+      "label": "influyó en (marco histórico)"
+    },
+    {
+      "source": "heidegger",
+      "target": "arendt",
+      "relation": "influyo",
+      "label": "fue su maestro"
+    },
+    {
+      "source": "confucio",
+      "target": "confucianismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "laozi",
+      "target": "taoismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "laozi",
+      "target": "tao",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "laozi",
+      "target": "wu_wei",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "zhuangzi",
+      "target": "taoismo",
+      "relation": "parte_de",
+      "label": "desarrolló"
+    },
+    {
+      "source": "confucianismo",
+      "target": "taoismo",
+      "relation": "opuso",
+      "label": "contrasta con"
+    },
+    {
+      "source": "buda",
+      "target": "budismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "buda",
+      "target": "nirvana",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "nagarjuna",
+      "target": "budismo",
+      "relation": "parte_de",
+      "label": "sistematizó (Madhyamaka)"
+    },
+    {
+      "source": "nagarjuna",
+      "target": "sunyata",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "shankara",
+      "target": "advaita_vedanta",
+      "relation": "fundo",
+      "label": "sistematizó"
+    },
+    {
+      "source": "budismo",
+      "target": "advaita_vedanta",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "buda",
+      "target": "schopenhauer",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "advaita_vedanta",
+      "target": "schopenhauer",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "socrates",
+      "target": "mayeutica",
+      "relation": "desarrollo",
+      "label": "practicó"
+    },
+    {
+      "source": "socrates",
+      "target": "cinismo",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "diogenes",
+      "target": "cinismo",
+      "relation": "parte_de",
+      "label": "encarnó"
+    },
+    {
+      "source": "cinismo",
+      "target": "estoicismo",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "plato",
+      "target": "teoria_formas",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "aristoteles",
+      "target": "teoria_formas",
+      "relation": "critico",
+      "label": "criticó"
+    },
+    {
+      "source": "epicuro",
+      "target": "ataraxia",
+      "relation": "desarrollo",
+      "label": "buscó la"
+    },
+    {
+      "source": "escepticismo",
+      "target": "ataraxia",
+      "relation": "parte_de",
+      "label": "busca la"
+    },
+    {
+      "source": "seneca",
+      "target": "estoicismo",
+      "relation": "parte_de",
+      "label": "difundió"
+    },
+    {
+      "source": "epicteto",
+      "target": "estoicismo",
+      "relation": "parte_de",
+      "label": "enseñó"
+    },
+    {
+      "source": "marco_aurelio",
+      "target": "estoicismo",
+      "relation": "parte_de",
+      "label": "practicó"
+    },
+    {
+      "source": "epicteto",
+      "target": "marco_aurelio",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "plotino",
+      "target": "neoplatonismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "platonismo",
+      "target": "neoplatonismo",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "neoplatonismo",
+      "target": "agustin",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "anselmo",
+      "target": "escolastica",
+      "relation": "parte_de",
+      "label": "pertenece a"
+    },
+    {
+      "source": "ockham",
+      "target": "navaja_ockham",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "ockham",
+      "target": "escolastica",
+      "relation": "critico",
+      "label": "criticó (nominalismo)"
+    },
+    {
+      "source": "ockham",
+      "target": "empirismo",
+      "relation": "influyo",
+      "label": "anticipó"
+    },
+    {
+      "source": "maquiavelo",
+      "target": "hobbes",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "escepticismo",
+      "target": "montaigne",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "montaigne",
+      "target": "descartes",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "bacon",
+      "target": "empirismo",
+      "relation": "influyo",
+      "label": "anticipó"
+    },
+    {
+      "source": "bacon",
+      "target": "filosofia_ciencia",
+      "relation": "influyo",
+      "label": "sentó bases de"
+    },
+    {
+      "source": "pascal",
+      "target": "kierkegaard",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "descartes",
+      "target": "cogito",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "locke",
+      "target": "tabula_rasa",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "locke",
+      "target": "ilustracion",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "voltaire",
+      "target": "ilustracion",
+      "relation": "parte_de",
+      "label": "encarnó"
+    },
+    {
+      "source": "rousseau",
+      "target": "ilustracion",
+      "relation": "parte_de",
+      "label": "perteneció (y la criticó)"
+    },
+    {
+      "source": "ilustracion",
+      "target": "kant",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "ilustracion",
+      "target": "comte",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "comte",
+      "target": "positivismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "hume",
+      "target": "positivismo",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "positivismo",
+      "target": "filosofia_analitica",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "peirce",
+      "target": "pragmatismo",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "peirce",
+      "target": "william_james",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "william_james",
+      "target": "pragmatismo",
+      "relation": "parte_de",
+      "label": "popularizó"
+    },
+    {
+      "source": "dewey",
+      "target": "pragmatismo",
+      "relation": "parte_de",
+      "label": "desarrolló"
+    },
+    {
+      "source": "frege",
+      "target": "filosofia_analitica",
+      "relation": "fundo",
+      "label": "fundó"
+    },
+    {
+      "source": "frege",
+      "target": "russell",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "russell",
+      "target": "filosofia_analitica",
+      "relation": "parte_de",
+      "label": "consolidó"
+    },
+    {
+      "source": "russell",
+      "target": "wittgenstein",
+      "relation": "influyo",
+      "label": "fue su maestro"
+    },
+    {
+      "source": "wittgenstein",
+      "target": "juegos_lenguaje",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "popper",
+      "target": "falsacionismo",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "popper",
+      "target": "filosofia_ciencia",
+      "relation": "parte_de",
+      "label": "pertenece a"
+    },
+    {
+      "source": "hume",
+      "target": "popper",
+      "relation": "influyo",
+      "label": "influyó en (inducción)"
+    },
+    {
+      "source": "kuhn",
+      "target": "paradigma",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "kuhn",
+      "target": "filosofia_ciencia",
+      "relation": "parte_de",
+      "label": "pertenece a"
+    },
+    {
+      "source": "popper",
+      "target": "kuhn",
+      "relation": "opuso",
+      "label": "debatió con"
+    },
+    {
+      "source": "marx",
+      "target": "alienacion",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "nietzsche",
+      "target": "superhombre",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "nietzsche",
+      "target": "eterno_retorno",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "heidegger",
+      "target": "dasein",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "camus",
+      "target": "absurdo",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "sartre",
+      "target": "beauvoir",
+      "relation": "influyo",
+      "label": "diálogo constante con"
+    },
+    {
+      "source": "beauvoir",
+      "target": "existencialismo",
+      "relation": "parte_de",
+      "label": "pertenece a"
+    },
+    {
+      "source": "beauvoir",
+      "target": "feminismo_filosofico",
+      "relation": "fundo",
+      "label": "fundó (moderno)"
+    },
+    {
+      "source": "beauvoir",
+      "target": "segundo_sexo",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "husserl",
+      "target": "merleau_ponty",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "merleau_ponty",
+      "target": "fenomenologia",
+      "relation": "parte_de",
+      "label": "desarrolló (el cuerpo)"
+    },
+    {
+      "source": "husserl",
+      "target": "levinas",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "heidegger",
+      "target": "levinas",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "levinas",
+      "target": "derrida",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "heidegger",
+      "target": "gadamer",
+      "relation": "influyo",
+      "label": "fue su maestro"
+    },
+    {
+      "source": "gadamer",
+      "target": "hermeneutica",
+      "relation": "fundo",
+      "label": "sistematizó"
+    },
+    {
+      "source": "nietzsche",
+      "target": "ortega",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "fenomenologia",
+      "target": "ortega",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "heidegger",
+      "target": "han",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "foucault",
+      "target": "han",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "rawls",
+      "target": "velo_ignorancia",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "arendt",
+      "target": "banalidad_mal",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "derrida",
+      "target": "deconstruccion",
+      "relation": "desarrollo",
+      "label": "formuló"
+    },
+    {
+      "source": "confucio",
+      "target": "mencio",
+      "relation": "influyo",
+      "label": "influyó en"
+    },
+    {
+      "source": "mencio",
+      "target": "confucianismo",
+      "relation": "parte_de",
+      "label": "desarrolló"
+    }
   ]
 }

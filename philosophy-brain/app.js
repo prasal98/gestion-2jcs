@@ -3,6 +3,13 @@
 
   const TYPE_COLORS = { filosofo: "#7dd3fc", escuela: "#c084fc", concepto: "#fbbf24" };
   const TYPE_LABELS = { filosofo: "Filósofo", escuela: "Escuela / corriente", concepto: "Concepto" };
+  const REL_COLORS = {
+    opuso: "rgba(248,113,113,0.55)",
+    critico: "rgba(248,113,113,0.55)",
+    fundo: "rgba(192,132,252,0.5)",
+    parte_de: "rgba(192,132,252,0.5)",
+    desarrollo: "rgba(251,191,36,0.5)",
+  };
   const ERAS = ["Antigua", "Medieval", "Moderna", "Contemporánea", "Oriental"];
   const CUSTOM_KEY = "philosophy-brain-custom";
 
@@ -174,7 +181,7 @@
       if (!isVisible(a) || !isVisible(b)) return;
       const dim = focusSet && !(focusSet.has(a.id) && focusSet.has(b.id));
       const pa = worldToScreen(a.x, a.y), pb = worldToScreen(b.x, b.y);
-      ctx.strokeStyle = dim ? edgeColorDim : edgeColor;
+      ctx.strokeStyle = dim ? edgeColorDim : (REL_COLORS[e.relation] || edgeColor);
       ctx.lineWidth = dim ? 1 : 1.4;
       ctx.beginPath();
       ctx.moveTo(pa.x, pa.y);
@@ -223,6 +230,11 @@
 
   function tick() {
     step();
+    if (camTarget) {
+      camX += (camTarget.x - camX) * 0.12;
+      camY += (camTarget.y - camY) * 0.12;
+      if (Math.abs(camTarget.x - camX) + Math.abs(camTarget.y - camY) < 1) camTarget = null;
+    }
     draw();
     requestAnimationFrame(tick);
   }
@@ -251,6 +263,7 @@
       canvas.classList.add("dragging-node");
     } else {
       panning = true;
+      camTarget = null;
       panStart = { x: e.clientX, y: e.clientY };
       camStartAt = { x: camX, y: camY };
     }
@@ -303,6 +316,11 @@
 
   // ── panel de detalle ──────────────────────────────────────────────────
   const detailEl = document.getElementById("detail");
+  let camTarget = null;
+  function centerOn(n) {
+    camTarget = { x: n.x, y: n.y };
+    if (zoom < 0.8) zoom = 1;
+  }
   function selectNode(n) {
     selected = n;
     document.getElementById("detail-type").textContent = TYPE_LABELS[n.type] || n.type;
@@ -320,7 +338,7 @@
       if (!other) return;
       const li = document.createElement("li");
       li.innerHTML = `<span class="rel">${dir} ${rel}</span>${other.name}`;
-      li.addEventListener("click", () => selectNode(other));
+      li.addEventListener("click", () => { selectNode(other); centerOn(other); });
       ul.appendChild(li);
     });
     detailEl.hidden = false;
@@ -359,6 +377,14 @@
 
   document.getElementById("search").addEventListener("input", (e) => {
     searchTerm = e.target.value;
+  });
+
+  document.getElementById("btn-random").addEventListener("click", () => {
+    const vis = nodes.filter(isVisible);
+    if (!vis.length) return;
+    const n = vis[Math.floor(Math.random() * vis.length)];
+    selectNode(n);
+    centerOn(n);
   });
 
   function updateStats() {
